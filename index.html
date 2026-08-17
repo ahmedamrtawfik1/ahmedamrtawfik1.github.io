@@ -1,1119 +1,1478 @@
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
-<title>Live Mathletics</title>
+<!DOCTYPE html>
+<html lang="ar" dir="rtl" data-theme="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>مَدَارَات السُّنَّة — Orbits of the Sunnah</title>
 <style>
-/* ============================================================
-   LIVE MATHLETICS — local single-file build
-   Palette follows the older Live Mathletics look: flat solid
-   blue arena, white panels, saturated flat lane colours.
-   ============================================================ */
+@import url('https://fonts.googleapis.com/css2?family=Amiri:ital,wght@0,400;0,700;1,400&family=Scheherazade+New:wght@400;500;700&family=Marcellus&family=Lora:ital,wght@0,400;0,500;0,600;1,400;1,500&display=swap');
+
+/* ============ TOKENS ============ */
 :root{
-  --blue:#1668c4;
-  --blue-dark:#0f4f99;
-  --blue-deep:#0b3c78;
-  --panel:#ffffff;
-  --ink:#123252;
-  --ink-soft:#5b7a99;
-  --lime:#7ed321;
-  --lime-dark:#5faf10;
-  --orange:#f5a623;
-  --cyan:#22c1dc;
-  --purple:#9b59d0;
-  --gold:#ffc233;
-  --red:#e8443a;
-  --radius:14px;
-  --font:"Nunito","Quicksand","Avenir Next Rounded","Avenir Next","Trebuchet MS",system-ui,-apple-system,sans-serif;
+  --gold:#C9A24B; --gold-bright:#E8CB82; --gold-deep:#8F6E2A;
+  --radius:14px; --radius-lg:22px;
+  --ar-display:'Scheherazade New','Amiri','Traditional Arabic',serif;
+  --ar-body:'Amiri','Scheherazade New','Traditional Arabic',serif;
+  --en-display:'Marcellus',Georgia,serif;
+  --en-body:'Lora',Georgia,serif;
+  --ease:cubic-bezier(.33,.9,.25,1);
 }
-*{box-sizing:border-box;margin:0;padding:0}
-html,body{height:100%}
+html[data-theme="dark"]{
+  --bg:#0A101F; --bg2:#0E1730; --surface:#131F3A; --surface2:#182747;
+  --ink:#EFE7D2; --ink-dim:#9AA5BD; --ink-faint:#6B7690;
+  --line:rgba(201,162,75,.20); --line-soft:rgba(201,162,75,.10);
+  --green:#5A9A80; --shadow:0 18px 50px -18px rgba(0,0,0,.65);
+  --glow:0 0 22px rgba(232,203,130,.35);
+  --card-open:rgba(201,162,75,.05);
+}
+html[data-theme="light"]{
+  --bg:#F5EFDF; --bg2:#EFE7D2; --surface:#FDFAF1; --surface2:#F6F0DF;
+  --ink:#1D2A4C; --ink-dim:#54608A; --ink-faint:#8B93AE;
+  --gold:#A87F2E; --gold-bright:#C9A24B; --gold-deep:#7A5B1E;
+  --line:rgba(29,42,76,.18); --line-soft:rgba(29,42,76,.08);
+  --green:#2F6B57; --shadow:0 16px 40px -20px rgba(29,42,76,.35);
+  --glow:0 0 18px rgba(168,127,46,.30);
+  --card-open:rgba(168,127,46,.05);
+}
+
+/* ============ BASE ============ */
+*{margin:0;padding:0;box-sizing:border-box}
+html{scroll-behavior:smooth}
 body{
-  font-family:var(--font);
-  background:var(--blue);
-  color:var(--ink);
-  -webkit-font-smoothing:antialiased;
-  -webkit-text-size-adjust:100%;
-  overflow-x:hidden;
+  background:var(--bg); color:var(--ink);
+  font-family:var(--ar-body); font-size:17px; line-height:1.85;
+  min-height:100vh; overflow-x:hidden;
+  background-image:
+    radial-gradient(1200px 600px at 50% -10%, var(--bg2), transparent 70%),
+    radial-gradient(900px 500px at 90% 110%, var(--bg2), transparent 60%);
+  transition:background-color .5s var(--ease), color .5s var(--ease);
 }
-button{font-family:inherit;cursor:pointer;border:none;background:none;color:inherit}
+html[dir="ltr"] body{font-family:var(--en-body);font-size:16.5px;line-height:1.75}
+::selection{background:var(--gold);color:var(--bg)}
+button{font:inherit;color:inherit;background:none;border:none;cursor:pointer}
+:focus-visible{outline:2px solid var(--gold);outline-offset:3px;border-radius:6px}
 
-/* ---------- screen router ---------- */
-.screen{display:none;min-height:100dvh;min-height:100vh;flex-direction:column}
-.screen.active{display:flex}
+/* faint star-field (dark only) */
+#stars{position:fixed;inset:0;pointer-events:none;opacity:.5;z-index:0}
+html[data-theme="light"] #stars{opacity:.12}
 
-/* ============================================================
-   HOME
-   ============================================================ */
-#screen-home,#screen-levels,#screen-results,#screen-review{
-  background:linear-gradient(180deg,#1e79d8 0%,var(--blue) 45%,var(--blue-dark) 100%);
-  align-items:center;
-  padding:26px 18px 40px;
-}
-.wrap{width:100%;max-width:880px;margin:0 auto}
+.wrap{position:relative;z-index:1;max-width:1060px;margin:0 auto;padding:0 20px 90px}
 
-.brand{text-align:center;margin:14px 0 22px}
-.brand h1{
-  font-size:clamp(38px,8vw,66px);
-  font-weight:800;
-  color:#fff;
-  letter-spacing:-1px;
-  line-height:1;
-  text-shadow:0 4px 0 rgba(0,0,0,.18);
-}
-.brand h1 em{font-style:normal;color:var(--gold)}
-.brand p{color:#cfe4ff;font-size:15px;font-weight:600;margin-top:9px}
+/* ============ HEADER ============ */
+header.masthead{text-align:center;padding:44px 0 8px}
+.ornament{color:var(--gold);font-size:26px;letter-spacing:.6em;user-select:none;
+  text-shadow:var(--glow);animation:breathe 6s ease-in-out infinite}
+@keyframes breathe{0%,100%{opacity:.75}50%{opacity:1}}
+h1.title-ar{font-family:var(--ar-display);font-weight:700;font-size:clamp(38px,7vw,62px);
+  line-height:1.35;margin:6px 0 0;
+  background:linear-gradient(180deg,var(--gold-bright),var(--gold) 55%,var(--gold-deep));
+  -webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent}
+.title-en{font-family:var(--en-display);letter-spacing:.32em;text-transform:uppercase;
+  font-size:clamp(11px,2vw,14px);color:var(--ink-dim);margin-top:2px}
+.tagline{color:var(--ink-dim);font-size:15.5px;max-width:640px;margin:14px auto 0}
+html[dir="ltr"] .tagline{font-size:14.5px}
 
-.card{
-  background:var(--panel);
-  border-radius:20px;
-  padding:22px;
-  box-shadow:0 8px 0 rgba(0,0,0,.14);
-  margin-bottom:16px;
-}
-.card h2{font-size:15px;text-transform:uppercase;letter-spacing:1.2px;color:var(--ink-soft);margin-bottom:14px;font-weight:800}
+/* ============ TOP CONTROLS ============ */
+.controls{position:sticky;top:0;z-index:50;display:flex;justify-content:space-between;
+  align-items:center;gap:10px;padding:12px 2px;
+  backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);
+  background:color-mix(in srgb, var(--bg) 78%, transparent);
+  border-bottom:1px solid var(--line-soft)}
+.ctrl-group{display:flex;gap:8px}
+.pill{display:inline-flex;align-items:center;gap:7px;padding:8px 15px;border-radius:999px;
+  border:1px solid var(--line);color:var(--ink-dim);font-size:14px;
+  background:var(--surface);transition:all .3s var(--ease)}
+.pill:hover{color:var(--gold-bright);border-color:var(--gold);transform:translateY(-1px)}
+.pill svg{width:16px;height:16px;flex:none}
 
-.avatar-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(64px,1fr));gap:10px}
-.avatar-pick{
-  border-radius:16px;padding:6px;background:#eef4fa;border:3px solid transparent;
-  transition:transform .12s,border-color .12s;line-height:0;
-}
-.avatar-pick svg{width:100%;height:auto;display:block}
-.avatar-pick[aria-pressed="true"]{border-color:var(--lime);background:#eaf9d8;transform:translateY(-3px)}
+/* ============ ORBIT NAV (signature) ============ */
+nav.orbits{display:flex;justify-content:center;gap:clamp(8px,2.5vw,20px);margin:30px 0 6px;flex-wrap:wrap}
+.orbit-btn{position:relative;display:flex;flex-direction:column;align-items:center;gap:9px;
+  padding:14px 10px 12px;min-width:104px;border-radius:var(--radius-lg);
+  border:1px solid transparent;color:var(--ink-dim);transition:all .35s var(--ease)}
+.orbit-btn .rings{width:52px;height:52px}
+.orbit-btn .rings circle{fill:none;stroke:currentColor;stroke-width:1.4;opacity:.35;
+  transition:all .4s var(--ease)}
+.orbit-btn .rings .active-ring{stroke:var(--gold);opacity:1;stroke-width:2.2;
+  filter:drop-shadow(0 0 5px var(--gold))}
+.orbit-btn .rings .core{fill:currentColor;stroke:none;opacity:.5}
+.orbit-btn.on .rings .core{fill:var(--gold-bright);opacity:1;filter:drop-shadow(0 0 6px var(--gold))}
+.orbit-btn .lbl{font-size:15.5px;font-weight:700;font-family:var(--ar-display)}
+html[dir="ltr"] .orbit-btn .lbl{font-family:var(--en-display);font-weight:400;font-size:13px;
+  letter-spacing:.14em;text-transform:uppercase}
+.orbit-btn .sub{font-size:11.5px;color:var(--ink-faint);margin-top:-6px;letter-spacing:.05em}
+.orbit-btn.on{color:var(--ink);border-color:var(--line);background:var(--surface);
+  box-shadow:var(--shadow)}
+.orbit-btn:hover{color:var(--ink)}
 
-.field{display:flex;flex-direction:column;gap:7px;margin-top:16px}
-.field label{font-size:12px;font-weight:800;letter-spacing:1px;text-transform:uppercase;color:var(--ink-soft)}
-.field input{
-  font-family:inherit;font-size:19px;font-weight:700;color:var(--ink);
-  padding:13px 15px;border:2px solid #d6e2ee;border-radius:12px;background:#f7fafd;width:100%;
-}
-.field input:focus{outline:none;border-color:var(--blue);background:#fff}
+/* ============ STAGE (the visual per level) ============ */
+#stage{position:relative;margin:22px auto 8px;min-height:120px;
+  transition:opacity .38s var(--ease), transform .45s var(--ease), filter .38s var(--ease)}
+#stage.zooming-in{opacity:0;transform:scale(.86);filter:blur(6px)}
+#stage.zooming-out{opacity:0;transform:scale(1.12);filter:blur(6px)}
+.stage-caption{text-align:center;color:var(--ink-faint);font-size:13.5px;margin-top:8px}
 
-.btn{
-  display:inline-flex;align-items:center;justify-content:center;gap:9px;
-  background:var(--lime);color:#1d3d04;font-weight:800;font-size:19px;
-  padding:16px 30px;border-radius:14px;box-shadow:0 5px 0 var(--lime-dark);
-  transition:transform .08s,box-shadow .08s;width:100%;
-}
-.btn:active{transform:translateY(4px);box-shadow:0 1px 0 var(--lime-dark)}
-.btn.secondary{background:#e8eff6;color:var(--ink);box-shadow:0 5px 0 #c2d2e0}
-.btn.secondary:active{box-shadow:0 1px 0 #c2d2e0}
-.btn.ghost{background:rgba(255,255,255,.14);color:#fff;box-shadow:none;border:2px solid rgba(255,255,255,.35)}
-.btn.ghost:active{transform:translateY(2px)}
+/* year wheel */
+.wheel-holder{display:flex;justify-content:center}
+svg.year-wheel{width:min(92vw,460px);height:auto;overflow:visible}
+.wheel-seg{cursor:pointer;transition:all .35s var(--ease)}
+.wheel-seg path.arc{fill:var(--surface);stroke:var(--line);stroke-width:1;transition:all .35s var(--ease)}
+.wheel-seg:hover path.arc{fill:var(--surface2)}
+.wheel-seg.has-sunan path.arc{fill:color-mix(in srgb, var(--gold) 14%, var(--surface))}
+.wheel-seg.sel path.arc{fill:color-mix(in srgb, var(--gold) 32%, var(--surface));
+  stroke:var(--gold);stroke-width:1.6;filter:drop-shadow(0 0 8px color-mix(in srgb,var(--gold) 55%,transparent))}
+.wheel-seg text{fill:var(--ink-dim);font-size:13px;font-family:var(--ar-display);pointer-events:none;
+  transition:fill .3s}
+html[dir="ltr"] .wheel-seg text{font-family:var(--en-display);font-size:9.5px;letter-spacing:.05em}
+.wheel-seg.sel text,.wheel-seg:hover text{fill:var(--ink)}
+.wheel-seg.has-sunan .dot{fill:var(--gold-bright)}
+.wheel-center-t{fill:var(--gold);font-family:var(--ar-display);font-weight:700}
+html[dir="ltr"] .wheel-center-t{font-family:var(--en-display);font-weight:400}
+.wheel-center-s{fill:var(--ink-faint);font-size:10px;letter-spacing:.2em}
+.sacred-mark{fill:none;stroke:var(--green);stroke-width:1.1;opacity:.85}
 
-.toggle-row{display:flex;gap:10px;margin-top:16px}
-.toggle-row .btn{font-size:14px;padding:12px 14px}
+/* month strip: 30 moons */
+.moon-strip{display:grid;grid-template-columns:repeat(auto-fit,minmax(46px,1fr));gap:10px;
+  max-width:820px;margin:0 auto;padding:10px 4px}
+.moon-night{display:flex;flex-direction:column;align-items:center;gap:5px;padding:8px 2px;
+  border-radius:12px;border:1px solid transparent;transition:all .3s var(--ease)}
+.moon-night svg{width:30px;height:30px}
+.moon-night .n{font-size:12px;color:var(--ink-faint)}
+.moon-night.white{border-color:var(--gold);background:color-mix(in srgb,var(--gold) 10%,transparent);
+  box-shadow:var(--glow)}
+.moon-night.white .n{color:var(--gold-bright);font-weight:700}
+.moon-face{fill:var(--gold-bright)}
+.moon-dark{fill:var(--surface2);stroke:var(--line);stroke-width:.8}
 
-/* ============================================================
-   LEVEL SELECT
-   ============================================================ */
-.topbar{display:flex;align-items:center;gap:12px;width:100%;max-width:880px;margin-bottom:16px}
-.topbar h2{color:#fff;font-size:23px;font-weight:800;flex:1}
-.icon-btn{
-  width:42px;height:42px;border-radius:12px;background:rgba(255,255,255,.16);
-  border:2px solid rgba(255,255,255,.3);color:#fff;font-size:19px;font-weight:800;
-  display:flex;align-items:center;justify-content:center;flex:none;
-}
-.level-list{display:grid;gap:12px;width:100%}
-.level-card{
-  display:flex;align-items:center;gap:15px;text-align:left;width:100%;
-  background:var(--panel);border-radius:16px;padding:15px 17px;
-  box-shadow:0 5px 0 rgba(0,0,0,.14);transition:transform .1s,box-shadow .1s;
-}
-.level-card:active{transform:translateY(3px);box-shadow:0 2px 0 rgba(0,0,0,.14)}
-.level-num{
-  width:52px;height:52px;flex:none;border-radius:14px;background:var(--blue);color:#fff;
-  display:flex;align-items:center;justify-content:center;font-size:25px;font-weight:800;
-}
-.level-card.challenge .level-num{background:var(--gold);color:#5a3d00}
-.level-body{flex:1;min-width:0}
-.level-body strong{display:flex;align-items:center;gap:7px;font-size:17px;font-weight:800;margin-bottom:3px}
-.level-body span{display:block;font-size:12.5px;color:var(--ink-soft);font-weight:600;line-height:1.4}
-.level-meta{flex:none;text-align:right;font-size:12px;font-weight:800;color:var(--ink-soft)}
-.level-meta b{display:block;font-size:21px;color:var(--blue);line-height:1.1}
-/* Deeper amber than --gold: the star sits on the white card, where
-   the bright gold used on the blue arena washes out. */
-.star{color:#e09400;font-size:18px;flex:none}
-.hint-note{
-  color:#cfe4ff;font-size:12.5px;font-weight:600;text-align:center;
-  margin-top:14px;line-height:1.6;max-width:520px;
-}
+/* week arches */
+.week-row{display:flex;justify-content:center;align-items:flex-end;gap:clamp(4px,1.6vw,14px);
+  flex-wrap:wrap;padding:8px 0 2px}
+.arch{display:flex;flex-direction:column;align-items:center;gap:8px;padding:0 2px;
+  transition:transform .3s var(--ease)}
+.arch:hover{transform:translateY(-4px)}
+.arch .mihrab{width:clamp(52px,10vw,86px);border:1.4px solid var(--line);border-bottom:none;
+  background:var(--surface);border-radius:100px 100px 0 0;display:flex;align-items:flex-end;
+  justify-content:center;padding-bottom:10px;position:relative;transition:all .35s var(--ease)}
+.arch .mihrab .glyph{font-size:20px;line-height:1;color:var(--ink-faint)}
+.arch.h60 .mihrab{height:74px}
+.arch.h80 .mihrab{height:96px}
+.arch.h110 .mihrab{height:128px}
+.arch.marked .mihrab{border-color:var(--gold);
+  background:color-mix(in srgb,var(--gold) 9%,var(--surface))}
+.arch.marked .glyph{color:var(--gold-bright)}
+.arch.jumuah .mihrab{border-color:var(--gold);border-width:2px;
+  background:linear-gradient(180deg,color-mix(in srgb,var(--gold) 22%,var(--surface)),var(--surface));
+  box-shadow:var(--glow)}
+.arch .dname{font-size:14.5px;font-weight:700;font-family:var(--ar-display);color:var(--ink-dim)}
+html[dir="ltr"] .arch .dname{font-family:var(--en-display);font-weight:400;font-size:11.5px;
+  letter-spacing:.1em;text-transform:uppercase}
+.arch.jumuah .dname{color:var(--gold-bright)}
 
-/* ============================================================
-   RACE — solid blue arena
-   ============================================================ */
-#screen-race{background:var(--blue);padding:0}
-.race-inner{
-  width:100%;max-width:1000px;margin:0 auto;padding:14px 16px 18px;
-  display:flex;flex-direction:column;flex:1;gap:14px;
-}
+/* day arc */
+.day-arc-holder{display:flex;justify-content:center}
+svg.day-arc{width:min(94vw,680px);height:auto;overflow:visible}
+.arc-path{fill:none;stroke:var(--line);stroke-width:1.4;stroke-dasharray:3 6}
+.arc-sun{fill:var(--gold-bright);filter:drop-shadow(0 0 8px var(--gold))}
+.arc-stop circle{fill:var(--surface);stroke:var(--gold);stroke-width:1.5;cursor:pointer;
+  transition:all .3s var(--ease)}
+.arc-stop:hover circle{fill:var(--gold);}
+.arc-stop text{fill:var(--ink-dim);font-size:12px;font-family:var(--ar-display)}
+html[dir="ltr"] .arc-stop text{font-family:var(--en-body);font-size:9.5px}
+.horizon{stroke:var(--line);stroke-width:1}
 
-/* --- top: question + answer box side by side, timer right --- */
-.race-top{
-  background:var(--panel);border-radius:var(--radius);
-  padding:14px 18px;display:flex;align-items:center;gap:16px;
-  box-shadow:0 5px 0 rgba(0,0,0,.16);
-}
-.qline{flex:1;display:flex;align-items:center;gap:16px;min-width:0;flex-wrap:nowrap}
-.question{
-  font-size:clamp(24px,5.2vw,44px);font-weight:800;color:var(--ink);
-  white-space:nowrap;line-height:1.1;
-}
-.answerbox{
-  flex:none;min-width:clamp(110px,22vw,190px);height:clamp(52px,9vw,74px);
-  border:4px solid var(--blue);border-radius:12px;background:#f4f9ff;
-  display:flex;align-items:center;justify-content:center;
-  font-size:clamp(26px,5.4vw,44px);font-weight:800;color:var(--blue-deep);
-  letter-spacing:1px;transition:background .12s,border-color .12s;
-}
-.answerbox.correct{background:#e4f8cd;border-color:var(--lime-dark);color:#3c7a00}
-.answerbox.wrong{background:#ffe4e2;border-color:var(--red);color:#b32b22;animation:shake .3s}
-.answerbox .caret{
-  display:inline-block;width:3px;height:.75em;background:var(--blue);
-  margin-left:2px;animation:blink 1s steps(2,start) infinite;vertical-align:-2px;
-}
-@keyframes blink{to{visibility:hidden}}
-@keyframes shake{
-  0%,100%{transform:translateX(0)}
-  25%{transform:translateX(-7px)}
-  75%{transform:translateX(7px)}
-}
+/* ============ SECTIONS & CARDS ============ */
+.level-intro{max-width:720px;margin:26px auto 4px;text-align:center;color:var(--ink-dim);
+  font-size:15.5px}
+.group-h{display:flex;align-items:center;gap:14px;margin:40px 0 16px}
+.group-h .rule{flex:1;height:1px;background:linear-gradient(90deg,transparent,var(--line),transparent)}
+.group-h .gt{font-family:var(--ar-display);font-weight:700;font-size:24px;color:var(--gold);
+  display:flex;align-items:center;gap:10px;white-space:nowrap}
+html[dir="ltr"] .group-h .gt{font-family:var(--en-display);font-weight:400;font-size:19px;letter-spacing:.06em}
+.group-h .gt .star8{color:var(--gold);font-size:17px;opacity:.9}
+.group-h .gsub{font-size:12.5px;color:var(--ink-faint);letter-spacing:.08em;white-space:nowrap}
 
-/* --- circular timer --- */
-.timer{position:relative;width:66px;height:66px;flex:none}
-.timer svg{width:100%;height:100%;transform:rotate(-90deg)}
-.timer .ring-bg{fill:none;stroke:#e3ecf5;stroke-width:9}
-.timer .ring-fg{fill:none;stroke:var(--lime);stroke-width:9;stroke-linecap:round;transition:stroke .3s}
-.timer.warn .ring-fg{stroke:var(--orange)}
-.timer.danger .ring-fg{stroke:var(--red)}
-.timer-num{
-  position:absolute;inset:0;display:flex;align-items:center;justify-content:center;
-  font-size:22px;font-weight:800;color:var(--ink);
-}
-.timer.danger .timer-num{color:var(--red)}
+.cards{display:grid;gap:14px;margin-top:14px}
+.card{border:1px solid var(--line-soft);border-radius:var(--radius-lg);background:var(--surface);
+  overflow:hidden;transition:border-color .35s var(--ease), box-shadow .35s var(--ease),
+  background .35s var(--ease);
+  animation:rise .5s var(--ease) both}
+@keyframes rise{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:none}}
+.card:hover{border-color:var(--line)}
+.card.open{border-color:var(--gold);box-shadow:var(--shadow);background:
+  linear-gradient(180deg,var(--card-open),transparent 120px),var(--surface)}
+.card-head{width:100%;display:flex;align-items:center;gap:16px;padding:18px 20px;text-align:start}
+.card-ico{flex:none;width:46px;height:46px;border-radius:50%;border:1px solid var(--line);
+  display:flex;align-items:center;justify-content:center;font-size:21px;
+  background:var(--surface2);color:var(--gold-bright);transition:all .35s var(--ease)}
+.card.open .card-ico{border-color:var(--gold);box-shadow:var(--glow)}
+.card-tt{flex:1;min-width:0}
+.card-tt .ct{font-family:var(--ar-display);font-weight:700;font-size:20px;line-height:1.5}
+html[dir="ltr"] .card-tt .ct{font-family:var(--en-display);font-weight:400;font-size:17.5px}
+.card-tt .cb{color:var(--ink-dim);font-size:14.5px;line-height:1.7;margin-top:2px}
+html[dir="ltr"] .card-tt .cb{font-size:13.5px}
+.chev{flex:none;width:22px;height:22px;color:var(--ink-faint);transition:transform .4s var(--ease)}
+.card.open .chev{transform:rotate(180deg);color:var(--gold)}
+.card-body{max-height:0;overflow:hidden;transition:max-height .55s var(--ease)}
+.card-inner{padding:4px 22px 22px;border-top:1px dashed var(--line-soft);margin:0 20px;
+  padding-left:2px;padding-right:2px}
+.hadith-ar{font-family:var(--ar-body);font-size:21px;line-height:2.15;text-align:right;
+  direction:rtl;color:var(--ink);padding:14px 18px 10px;position:relative}
+.hadith-ar::before{content:'﴾';color:var(--gold);opacity:.0}
+.hadith-en{font-family:var(--en-body);font-style:italic;font-size:15px;line-height:1.8;
+  color:var(--ink-dim);padding:2px 18px 12px;direction:ltr;text-align:left}
+.meta-row{display:flex;flex-wrap:wrap;gap:8px;padding:8px 16px 4px}
+.chip{display:inline-flex;align-items:center;gap:6px;font-size:12.5px;padding:5px 12px;
+  border-radius:999px;border:1px solid var(--line);color:var(--ink-dim);
+  font-family:var(--en-body)}
+html[dir="rtl"] .chip{font-family:var(--ar-body);font-size:13.5px}
+.chip.grade{border-color:color-mix(in srgb,var(--green) 55%,transparent);color:var(--green);font-weight:600}
+.chip.src{border-color:color-mix(in srgb,var(--gold) 45%,transparent);color:var(--gold)}
+.note{font-size:13px;color:var(--ink-faint);padding:8px 16px 0;line-height:1.7}
 
-/* --- lanes --- */
-.lanes{display:flex;flex-direction:column;gap:9px}
-.lane{display:flex;align-items:center;gap:11px}
-.racer-box{
-  flex:none;width:clamp(112px,22vw,168px);
-  background:var(--panel);border-radius:11px;padding:6px 10px 6px 6px;
-  display:flex;align-items:center;gap:8px;box-shadow:0 3px 0 rgba(0,0,0,.16);
-}
-.racer-box svg{width:34px;height:34px;flex:none;border-radius:50%}
-.racer-box .rname{
-  font-size:13.5px;font-weight:800;color:var(--ink);
-  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
-}
-.lane.you .racer-box{box-shadow:0 3px 0 var(--lime-dark),0 0 0 3px var(--lime) inset}
+/* quran badge + grading note */
+.qbadge{display:inline-flex;align-items:center;font-size:13px;color:var(--gold);
+  border:1px solid color-mix(in srgb,var(--gold) 40%,transparent);border-radius:6px;
+  padding:0 6px;margin-inline-start:8px;vertical-align:middle;line-height:1.6;
+  font-family:var(--ar-display)}
+.gnote{font-size:13px;color:var(--ink-faint);padding:6px 16px 0;line-height:1.8;font-style:normal}
+html[dir="ltr"] .gnote{font-family:var(--en-body);font-size:12.5px}
 
-.track{position:relative;flex:1;height:34px;min-width:0}
-.track::before{
-  content:"";position:absolute;inset:auto 0 auto 0;top:50%;transform:translateY(-50%);
-  height:12px;border-radius:6px;background:rgba(255,255,255,.14);
-}
-.arrow{
-  position:absolute;left:0;top:50%;transform:translateY(-50%);
-  height:26px;border-radius:5px 0 0 5px;
-  clip-path:polygon(0 0,calc(100% - 15px) 0,100% 50%,calc(100% - 15px) 100%,0 100%);
-  transition:width .35s cubic-bezier(.34,1.4,.5,1);
-}
-.lane-score{
-  position:absolute;top:50%;transform:translateY(-50%);
-  margin-left:11px;font-size:18px;font-weight:800;color:#fff;
-  text-shadow:0 2px 3px rgba(0,0,0,.3);transition:left .35s cubic-bezier(.34,1.4,.5,1);
-}
+/* today indicators */
+.wheel-seg.tnow path.arc{stroke:var(--green);stroke-width:2;stroke-dasharray:4 3}
+.wheel-seg.tnow text{fill:var(--green);font-weight:700}
+.moon-night.tnow{border-color:var(--green);box-shadow:0 0 14px color-mix(in srgb,var(--green) 45%,transparent)}
+.moon-night.tnow .n{color:var(--green);font-weight:700}
+.moon-night .juz{font-size:10px;color:var(--ink-faint);letter-spacing:.03em;line-height:1}
+.arch.tnow .dname{color:var(--green)}
+.arch.tnow .mihrab{border-color:var(--green)}
+.today-tag{display:block;font-size:10px;color:var(--green);letter-spacing:.08em;line-height:1.2}
 
-/* --- input area --- */
-.input-area{margin-top:auto;display:flex;flex-direction:column;align-items:center;gap:10px}
-.keypad{
-  display:grid;grid-template-columns:repeat(4,1fr);gap:9px;
-  width:100%;max-width:430px;
-}
-.keypad button{
-  background:var(--panel);border-radius:13px;font-size:27px;font-weight:800;color:var(--ink);
-  height:60px;box-shadow:0 4px 0 rgba(0,0,0,.22);touch-action:manipulation;
-  display:flex;align-items:center;justify-content:center;user-select:none;-webkit-user-select:none;
-}
-.keypad button:active{transform:translateY(3px);box-shadow:0 1px 0 rgba(0,0,0,.22)}
-.keypad .k-enter{
-  grid-column:4;grid-row:2 / span 3;height:auto;
-  background:var(--lime);color:#1d3d04;box-shadow:0 4px 0 var(--lime-dark);font-size:31px;
-}
-.keypad .k-enter:active{box-shadow:0 1px 0 var(--lime-dark)}
-.keypad .k-back{grid-column:4;grid-row:1;background:#dbe7f2;font-size:23px}
-.keypad .k-zero{grid-column:2 / span 2}
-.keypad.with-dot .k-zero{grid-column:2}
-.keypad .k-dot{display:none}
-.keypad.with-dot .k-dot{display:flex}
+/* occasions star */
+.occ-holder{display:flex;justify-content:center}
+svg.occ-star{width:min(94vw,560px);height:auto;overflow:visible}
+.occ-core{fill:none;stroke:var(--gold);stroke-width:1.3;opacity:.9}
+.occ-core-fill{fill:color-mix(in srgb,var(--gold) 10%,transparent)}
+.occ-glyph{fill:var(--gold);font-family:var(--ar-display);font-size:40px}
+.occ-node{cursor:pointer}
+.occ-node circle{fill:var(--surface);stroke:var(--line);stroke-width:1.3;transition:all .3s var(--ease)}
+.occ-node:hover circle{stroke:var(--gold);fill:color-mix(in srgb,var(--gold) 12%,var(--surface))}
+.occ-node text.oico{font-size:19px}
+.occ-node text.olbl{fill:var(--ink-dim);font-size:13.5px;font-family:var(--ar-display);font-weight:700}
+html[dir="ltr"] .occ-node text.olbl{font-family:var(--en-display);font-weight:400;font-size:10.5px;letter-spacing:.06em}
+.occ-node:hover text.olbl{fill:var(--ink)}
+.occ-line{stroke:var(--line-soft);stroke-width:1;stroke-dasharray:2 5}
 
-.kb-hint{
-  color:#cfe4ff;font-size:14px;font-weight:700;text-align:center;
-  padding:12px;letter-spacing:.3px;
-}
-.kb-hint kbd{
-  background:rgba(255,255,255,.2);border:1px solid rgba(255,255,255,.35);
-  border-radius:6px;padding:2px 8px;font-family:inherit;font-weight:800;font-size:13px;
-}
-.race-head{display:flex;align-items:center;gap:10px;color:#fff}
-.race-head .lv{font-size:15px;font-weight:800;letter-spacing:.5px;flex:1}
-.race-head .lv .dbl{color:var(--gold)}
+/* with-every-prayer hub on day arc */
+.wp-hub{cursor:pointer}
+.wp-hub circle{fill:color-mix(in srgb,var(--gold) 14%,var(--surface));stroke:var(--gold);
+  stroke-width:1.6;transition:all .3s var(--ease)}
+.wp-hub:hover circle{fill:var(--gold)}
+.wp-hub:hover text{fill:var(--bg)}
+.wp-hub text{fill:var(--gold-bright);font-size:13px;font-family:var(--ar-display);font-weight:700}
+html[dir="ltr"] .wp-hub text{font-family:var(--en-display);font-weight:400;font-size:9.5px;letter-spacing:.05em}
+.arc-moon{fill:var(--ink-dim);opacity:.8}
 
-/* countdown overlay */
-.countdown{
-  position:fixed;inset:0;background:rgba(11,60,120,.94);
-  display:flex;align-items:center;justify-content:center;z-index:50;
-  font-size:clamp(80px,26vw,190px);font-weight:800;color:#fff;
-}
-.countdown span{animation:pop .55s ease-out}
-@keyframes pop{from{transform:scale(.35);opacity:0}to{transform:scale(1);opacity:1}}
+/* footer */
+footer{margin-top:70px;text-align:center;color:var(--ink-faint);font-size:13.5px;line-height:2}
+footer .ornament{font-size:18px}
+.salla{font-family:var(--ar-display);color:var(--gold);font-size:22px}
 
-/* ============================================================
-   RESULTS / REVIEW
-   ============================================================ */
-.standing{
-  display:flex;align-items:center;gap:13px;background:var(--panel);
-  border-radius:14px;padding:12px 15px;box-shadow:0 4px 0 rgba(0,0,0,.14);margin-bottom:10px;
-}
-.standing.you{box-shadow:0 4px 0 var(--lime-dark),0 0 0 3px var(--lime) inset}
-.standing svg{width:42px;height:42px;flex:none;border-radius:50%}
-.place{
-  width:36px;height:36px;flex:none;border-radius:50%;background:#e8eff6;color:var(--ink-soft);
-  display:flex;align-items:center;justify-content:center;font-weight:800;font-size:16px;
-}
-.standing:nth-child(1) .place{background:var(--gold);color:#5a3d00}
-.standing-name{flex:1;font-weight:800;font-size:17px}
-.standing-score{font-weight:800;font-size:25px;color:var(--blue)}
-.result-hero{text-align:center;margin-bottom:18px}
-.result-hero .big{font-size:clamp(46px,13vw,86px);font-weight:800;color:#fff;line-height:1}
-.result-hero .sub{color:#cfe4ff;font-weight:700;font-size:16px;margin-top:5px}
-.badge{
-  display:inline-block;background:var(--gold);color:#5a3d00;font-weight:800;
-  padding:7px 16px;border-radius:99px;margin-top:11px;font-size:14px;
-}
-.review-item{
-  background:var(--panel);border-radius:12px;padding:12px 15px;margin-bottom:9px;
-  display:flex;align-items:center;gap:12px;flex-wrap:wrap;
-}
-.review-q{font-weight:800;font-size:17px;flex:1;min-width:130px}
-.review-given{color:var(--red);font-weight:800;font-size:16px;text-decoration:line-through}
-.review-arrow{color:var(--ink-soft);font-weight:800;font-size:15px}
-.review-ans{color:#3c7a00;font-weight:800;font-size:19px}
-.empty-note{color:#cfe4ff;text-align:center;font-weight:700;padding:30px 10px;line-height:1.6}
-.btn-row{display:flex;gap:10px;margin-top:6px}
-
-/* ============================================================
-   RESPONSIVE
-   ============================================================ */
-@media (max-width:700px){
-  .race-inner{padding:10px 11px 14px;gap:11px}
-  .race-top{padding:11px 12px;gap:10px;flex-wrap:wrap}
-  .qline{gap:10px}
-  .timer{width:54px;height:54px}
-  .timer-num{font-size:18px}
-  .racer-box{width:clamp(96px,34vw,130px);padding:5px 7px 5px 5px}
-  .racer-box svg{width:28px;height:28px}
-  .racer-box .rname{font-size:12px}
-  .track{height:28px}
-  .arrow{height:22px}
-  .lane-score{font-size:15px;margin-left:8px}
-  .keypad button{height:54px;font-size:24px}
-  .card{padding:17px}
-}
-@media (max-width:380px){
-  .qline{flex-wrap:wrap;gap:7px}
-  .answerbox{min-width:100px}
+@media (max-width:560px){
+  .card-head{padding:15px 14px;gap:12px}
+  .card-ico{width:40px;height:40px;font-size:18px}
+  .hadith-ar{font-size:19px;padding:12px 8px 8px}
+  .hadith-en{padding:2px 8px 10px}
+  .orbit-btn{min-width:78px;padding:10px 6px}
+  .orbit-btn .rings{width:42px;height:42px}
 }
 @media (prefers-reduced-motion:reduce){
-  *{animation-duration:.01ms !important;transition-duration:.01ms !important}
+  *,*::before,*::after{animation-duration:.01ms!important;transition-duration:.01ms!important}
 }
 </style>
+</head>
+<body>
+<canvas id="stars"></canvas>
+<div class="wrap">
 
-<!-- ============================ HOME ============================ -->
-<section class="screen active" id="screen-home">
-  <div class="wrap">
-    <div class="brand">
-      <h1>Live <em>Mathletics</em></h1>
-      <p>60 seconds. Answer as many as you can.</p>
+  <div class="controls">
+    <div class="ctrl-group">
+      <button class="pill" id="langBtn" aria-label="Switch language">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c2.8 2.6 4 5.6 4 9s-1.2 6.4-4 9c-2.8-2.6-4-5.6-4-9s1.2-6.4 4-9z"/></svg>
+        <span id="langLbl">English</span>
+      </button>
     </div>
-    <div class="card">
-      <h2>Choose your avatar</h2>
-      <div class="avatar-grid" id="avatarGrid"></div>
-      <div class="field">
-        <label for="nameInput">Your name</label>
-        <input id="nameInput" maxlength="12" placeholder="You" autocomplete="off" spellcheck="false">
-      </div>
-    </div>
-    <button class="btn" id="goLevels">Play &nbsp;▶</button>
-    <div class="toggle-row">
-      <button class="btn ghost" id="modeToggle">Input: Auto</button>
-      <button class="btn ghost" id="soundToggle">Sound: On</button>
+    <div class="ctrl-group">
+      <button class="pill" id="themeBtn" aria-label="Toggle dark or light mode">
+        <svg id="themeIco" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M21 12.8A9 9 0 1 1 11.2 3 7 7 0 0 0 21 12.8z"/></svg>
+        <span id="themeLbl">فاتح</span>
+      </button>
     </div>
   </div>
-</section>
 
-<!-- ========================= LEVEL SELECT ======================== -->
-<section class="screen" id="screen-levels">
-  <div class="topbar">
-    <button class="icon-btn" data-go="home">‹</button>
-    <h2>Choose a level</h2>
-  </div>
-  <div class="wrap">
-    <div class="level-list" id="levelList"></div>
-    <p class="hint-note">★ marks your challenge level — points are <b>doubled</b> there.
-      Score 20+ on it to unlock the next one.</p>
-  </div>
-</section>
+  <header class="masthead">
+    <div class="ornament">۞ ۞ ۞</div>
+    <h1 class="title-ar" id="appTitle">مَدَارَات السُّنَّة</h1>
+    <div class="title-en" id="appSubtitle">Orbits of the Sunnah</div>
+    <p class="tagline" id="tagline"></p>
+  </header>
 
-<!-- ============================ RACE ============================= -->
-<section class="screen" id="screen-race">
-  <div class="race-inner">
-    <div class="race-head">
-      <button class="icon-btn" id="quitRace">‹</button>
-      <div class="lv" id="raceLevelLabel">Level 1</div>
-    </div>
-    <div class="race-top">
-      <div class="qline">
-        <div class="question" id="questionText">&nbsp;</div>
-        <div class="answerbox" id="answerBox"></div>
-      </div>
-      <div class="timer" id="timer">
-        <svg viewBox="0 0 100 100">
-          <circle class="ring-bg" cx="50" cy="50" r="44"></circle>
-          <circle class="ring-fg" cx="50" cy="50" r="44" id="ringFg"></circle>
-        </svg>
-        <div class="timer-num" id="timerNum">60</div>
-      </div>
-    </div>
-    <div class="lanes" id="lanes"></div>
-    <div class="input-area" id="inputArea"></div>
-  </div>
-</section>
+  <nav class="orbits" id="orbitNav" aria-label="Time levels"></nav>
 
-<!-- =========================== RESULTS =========================== -->
-<section class="screen" id="screen-results">
-  <div class="wrap">
-    <div class="result-hero">
-      <div class="big" id="finalScore">0</div>
-      <div class="sub" id="finalSub">points</div>
-      <div id="finalBadges"></div>
-    </div>
-    <div id="standings"></div>
-    <button class="btn" id="playAgain">Play again</button>
-    <div class="btn-row">
-      <button class="btn secondary" data-go="levels">Change level</button>
-      <button class="btn secondary" id="goReview">Review</button>
-    </div>
-  </div>
-</section>
+  <div id="stage" aria-live="polite"></div>
+  <p class="level-intro" id="levelIntro"></p>
 
-<!-- =========================== REVIEW ============================ -->
-<section class="screen" id="screen-review">
-  <div class="topbar">
-    <button class="icon-btn" data-go="results">‹</button>
-    <h2>What you missed</h2>
-  </div>
-  <div class="wrap"><div id="reviewList"></div></div>
-</section>
+  <main id="content"></main>
 
+  <footer>
+    <div class="ornament">۞</div>
+    <p id="footNote"></p>
+    <p class="salla">صَلَّى اللهُ عَلَيْهِ وَسَلَّمَ تَسْلِيمًا كَثِيرًا</p>
+  </footer>
+</div>
 <script>
-"use strict";
+/* ==================== I18N ==================== */
+const L = {
+ar:{
+  langBtn:'English', theme:{dark:'فاتح', light:'داكن'},
+  title:'مَدَارَات السُّنَّة', subtitle:'Orbits of the Sunnah',
+  tagline:'موسوعة تفاعلية لسُنَن النبي ﷺ الثابتة في الصحيح، مرتّبة على مدارات الزمن: السنة، فالشهر، فالأسبوع، فاليوم.',
+  levels:{year:'السَّنَة', month:'الشَّهْر', week:'الأُسْبُوع', day:'اليَوْم', occ:'المَوَاقِف'},
+  levelSub:{year:'١٢ شهرًا', month:'٣٠ ليلة', week:'٧ أيام', day:'٢٤ ساعة', occ:'سُنن الأحداث'},
+  intro:{
+    year:'دُر مع عجلة السنة الهجرية: المواسم التي خصّها النبي ﷺ بعملٍ تلمع بالذهب. انقر شهرًا لتقف على سُننه.',
+    month:'في كل شهرٍ قمري ثلاث ليالٍ بيض يكتمل فيها البدر — وسُنَنٌ تتجدد مع كل هلال.',
+    week:'سبعة أيام، وسيّدها الجمعة. محاريب الأيام المُذهّبة تحمل سُننًا خاصة.',
+    day:'من استيقاظه ﷺ إلى نومه: قوسُ يومٍ كامل على هدي النبي ﷺ. وفي قلب القوس: سُننٌ تدور مع كل صلاة.',
+    occ:'سُننٌ لا يحكمها الوقت، بل تدور مع أحداث الحياة: القرارات، والمجالس، والسفر، والمطر، وصُحبة السور.'
+  },
+  wheelCenter:['السَّنَة','الهِجْرِيَّة'], sacredNote:'الأشهر الحُرُم مُعلَّمة بالخط الأخضر',
+  monthCaption:'الليالي البيض: ١٣ و١٤ و١٥ من كل شهر قمري',
+  weekCaption:'الجمعة سيّد الأيام — والاثنين والخميس يومان تُعرض فيهما الأعمال',
+  dayCaption:'اضغط على أي محطة للانتقال إلى سُننها',
+  narrator:'الراوي', source:'المصدر', grade:'الدرجة',
+  grades:{sahih:'صحيح', muttafaq:'متفق عليه', sahih_albani:'صحيح، الألباني', athar:'أثرٌ صحيح عن الصحابة'},
+  foot:'المتون منقولة من كتب السنة المسندة، والاقتصار هنا على ما صحّ. هذا عملٌ تعليمي لا يُغني عن الرجوع إلى أهل العلم.',
+  days:['الأحد','الاثنين','الثلاثاء','الأربعاء','الخميس','الجمعة','السبت'],
+  months:['المُحَرَّم','صَفَر','ربيع الأول','ربيع الآخر','جُمادى الأولى','جُمادى الآخرة','رَجَب','شَعْبان','رَمَضان','شَوَّال','ذو القَعْدة','ذو الحِجَّة'],
+  dayStops:{wake:'الاستيقاظ',fajr:'الفجر',duha:'الضحى',dhuhr:'الظهر',asr:'العصر',maghrib:'المغرب',isha:'العشاء',night:'الليل',sleep:'النوم'},
+  groupAllMonth:'سُنَن كل شهرٍ قمري', night:'ليلة',
+  withPrayer:'مع كل صلاة', todayLbl:'اليوم', juzLbl:'جـ',
+  occCaption:'انقر أي مدارٍ للانتقال إلى سُننه',
+  occGroups:{dua:'الدعاء والحاجات', people:'الناس والمجالس', travel:'السفر', nature:'الكون والمطر', quran:'فضائل السُّوَر'},
+  occIcons:{dua:'🤲', people:'🫂', travel:'🐪', nature:'🌧', quran:'📖'}
+},
+en:{
+  langBtn:'العربية', theme:{dark:'Light', light:'Dark'},
+  title:'Orbits of the Sunnah', subtitle:'مَدَارَات السُّنَّة',
+  tagline:'An interactive almanac of the rigorously authentic practices of the Prophet Muhammad ﷺ, arranged along the orbits of time: the year, the month, the week, and the day.',
+  levels:{year:'The Year', month:'The Month', week:'The Week', day:'The Day', occ:'Occasions'},
+  levelSub:{year:'12 months', month:'30 nights', week:'7 days', day:'24 hours', occ:'event sunan'},
+  intro:{
+    year:'Turn the wheel of the Hijri year: seasons the Prophet ﷺ singled out for devotion glow in gold. Tap a month to see its sunan.',
+    month:'Every lunar month holds three "white nights" when the moon is full — and sunan renewed with every crescent.',
+    week:'Seven days, crowned by Friday. The gilded arches carry days with their own sunan.',
+    day:'From his waking ﷺ to his sleep: the full arc of a day in the Prophetic pattern. And at the heart of the arc: sunan that turn with every prayer.',
+    occ:'Sunan governed not by the clock but by the events of life: decisions, gatherings, travel, rain, and the companionship of the surahs.'
+  },
+  wheelCenter:['The Hijri','Year'], sacredNote:'Sacred months are marked with a green line',
+  monthCaption:'The White Days: the 13th, 14th and 15th of every lunar month',
+  weekCaption:'Friday is the master of days — deeds are presented on Monday and Thursday',
+  dayCaption:'Tap any station to jump to its sunan',
+  narrator:'Narrator', source:'Source', grade:'Grade',
+  grades:{sahih:'Sahih', muttafaq:'Agreed upon', sahih_albani:'Sahih, al-Albani', athar:'Authentic Companion practice'},
+  foot:'Texts are drawn from the canonical hadith collections, restricted to what is authentic. This is an educational work and no substitute for the people of knowledge.',
+  days:['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'],
+  months:['Muharram','Safar','Rabiʿ al-Awwal','Rabiʿ al-Thani','Jumada al-Ula','Jumada al-Akhirah','Rajab','Shaʿban','Ramadan','Shawwal','Dhul-Qaʿdah','Dhul-Hijjah'],
+  dayStops:{wake:'Waking',fajr:'Fajr',duha:'Duha',dhuhr:'Dhuhr',asr:'ʿAsr',maghrib:'Maghrib',isha:'ʿIsha',night:'Night',sleep:'Sleep'},
+  groupAllMonth:'Sunan of every lunar month', night:'Night',
+  withPrayer:'With every prayer', todayLbl:'Today', juzLbl:'J.',
+  occCaption:'Tap any orbit to jump to its sunan',
+  occGroups:{dua:'Duʿa & needs', people:'People & gatherings', travel:'Travel', nature:'Sky & rain', quran:'Virtues of the Surahs'},
+  occIcons:{dua:'🤲', people:'🫂', travel:'🐪', nature:'🌧', quran:'📖'}
+}};
 
-/* ============================================================
-   0. UTILITIES
-   ============================================================ */
-const $ = id => document.getElementById(id);
-const ri = (min, max) => Math.floor(Math.random() * (max - min + 1)) + min;
-const pick = arr => arr[Math.floor(Math.random() * arr.length)];
-const round = (n, p = 6) => Math.round(n * 10 ** p) / 10 ** p;
-/** Format a number for display: strips float noise and trailing zeros. */
-const fmt = n => String(round(n, 6));
-/** Pad a number to 2 digits, for clock times. */
-const p2 = n => String(n).padStart(2, "0");
+/* ==================== DATA ====================
+   level: year (anchor = hijri month index 0-11)
+          month (anchor = 'all' | night number)
+          week (anchor = weekday 0=Sun..6=Sat)
+          day (anchor = stop key)                     */
+const E = [
+/* ---------- YEAR ---------- */
+{level:'year',anchor:0,icon:'🌙',
+ tAr:'الإكثار من صيام المُحرَّم',tEn:'Abundant fasting in Muharram',
+ bAr:'أفضل التطوّع بالصيام بعد رمضان يكون في شهر الله المحرَّم.',
+ bEn:'The best voluntary fasting after Ramadan is in the month of Allah, Muharram.',
+ hAr:'قال رسول الله ﷺ: «أَفْضَلُ الصِّيَامِ بَعْدَ رَمَضَانَ شَهْرُ اللهِ المُحَرَّمُ، وَأَفْضَلُ الصَّلَاةِ بَعْدَ الفَرِيضَةِ صَلَاةُ اللَّيْلِ».',
+ hEn:'The Messenger of Allah ﷺ said: "The best fasting after Ramadan is in the month of Allah, Muharram; and the best prayer after the obligatory prayer is the night prayer."',
+ nAr:'أبو هريرة رضي الله عنه',nEn:'Abu Hurayrah (may Allah be pleased with him)',
+ src:'Sahih Muslim 1163',srcAr:'صحيح مسلم ١١٦٣',grade:'sahih'},
+{level:'year',anchor:0,icon:'✦',
+ tAr:'صيام يوم عاشوراء',tEn:'Fasting the Day of ʿAshura',
+ bAr:'صيام العاشر من المحرم يُكفِّر ذنوب السنة الماضية.',
+ bEn:'Fasting the 10th of Muharram expiates the sins of the past year.',
+ hAr:'قال رسول الله ﷺ: «وَصِيَامُ يَوْمِ عَاشُورَاءَ، أَحْتَسِبُ عَلَى اللهِ أَنْ يُكَفِّرَ السَّنَةَ الَّتِي قَبْلَهُ».',
+ hEn:'The Messenger of Allah ﷺ said: "And fasting the Day of ʿAshura — I hope from Allah that it expiates the year that came before it."',
+ nAr:'أبو قتادة رضي الله عنه',nEn:'Abu Qatadah (may Allah be pleased with him)',
+ src:'Sahih Muslim 1162',srcAr:'صحيح مسلم ١١٦٢',grade:'sahih'},
+{level:'year',anchor:0,icon:'٩',
+ tAr:'صيام التاسع مع العاشر',tEn:'Fasting the 9th with the 10th',
+ bAr:'عزم النبي ﷺ على صيام التاسع مخالفةً لأهل الكتاب.',
+ bEn:'The Prophet ﷺ resolved to also fast the 9th, to differ from the People of the Book.',
+ hAr:'قال رسول الله ﷺ: «لَئِنْ بَقِيتُ إِلَى قَابِلٍ لَأَصُومَنَّ التَّاسِعَ».',
+ hEn:'The Messenger of Allah ﷺ said: "If I live until next year, I will certainly fast the ninth (as well)."',
+ nAr:'عبد الله بن عباس رضي الله عنهما',nEn:'ʿAbdullah ibn ʿAbbas (may Allah be pleased with them both)',
+ src:'Sahih Muslim 1134',srcAr:'صحيح مسلم ١١٣٤',grade:'sahih'},
+{level:'year',anchor:7,icon:'☾',
+ tAr:'الإكثار من الصيام في شعبان',tEn:'Abundant fasting in Shaʿban',
+ bAr:'كان شعبان أكثر الشهور صيامًا للنبي ﷺ بعد رمضان.',
+ bEn:'Shaʿban was the month in which the Prophet ﷺ fasted the most outside Ramadan.',
+ hAr:'قالت عائشة رضي الله عنها: «كَانَ رَسُولُ اللهِ ﷺ يَصُومُ حَتَّى نَقُولَ لَا يُفْطِرُ، وَيُفْطِرُ حَتَّى نَقُولَ لَا يَصُومُ، فَمَا رَأَيْتُ رَسُولَ اللهِ ﷺ اسْتَكْمَلَ صِيَامَ شَهْرٍ إِلَّا رَمَضَانَ، وَمَا رَأَيْتُهُ أَكْثَرَ صِيَامًا مِنْهُ فِي شَعْبَانَ».',
+ hEn:'ʿAʾishah (may Allah be pleased with her) said: "The Messenger of Allah ﷺ would fast until we said he would never break fast, and break fast until we said he would never fast. I never saw him complete a month of fasting except Ramadan, and I never saw him fast more in any month than in Shaʿban."',
+ nAr:'عائشة أم المؤمنين رضي الله عنها',nEn:'ʿAʾishah, Mother of the Believers (may Allah be pleased with her)',
+ src:'Sahih al-Bukhari 1969 · Sahih Muslim 1156',srcAr:'صحيح البخاري ١٩٦٩ · صحيح مسلم ١١٥٦',grade:'muttafaq'},
+{level:'year',anchor:8,icon:'🍽',
+ tAr:'السَّحور',tEn:'The pre-dawn meal (Suhoor)',
+ bAr:'التسحّر بركة، ولو على جرعة ماء.',
+ bEn:'Taking suhoor carries blessing, even a sip of water.',
+ hAr:'قال رسول الله ﷺ: «تَسَحَّرُوا فَإِنَّ فِي السَّحُورِ بَرَكَةً».',
+ hEn:'The Messenger of Allah ﷺ said: "Take the pre-dawn meal, for indeed there is blessing in suhoor."',
+ nAr:'أنس بن مالك رضي الله عنه',nEn:'Anas ibn Malik (may Allah be pleased with him)',
+ src:'Sahih al-Bukhari 1923 · Sahih Muslim 1095',srcAr:'صحيح البخاري ١٩٢٣ · صحيح مسلم ١٠٩٥',grade:'muttafaq'},
+{level:'year',anchor:8,icon:'🌇',
+ tAr:'تعجيل الفِطر',tEn:'Hastening to break the fast',
+ bAr:'الخير باقٍ في الأمة ما عجَّلوا الفطر عند غروب الشمس.',
+ bEn:'The Ummah remains upon good so long as they hasten to break the fast at sunset.',
+ hAr:'قال رسول الله ﷺ: «لَا يَزَالُ النَّاسُ بِخَيْرٍ مَا عَجَّلُوا الفِطْرَ».',
+ hEn:'The Messenger of Allah ﷺ said: "The people will remain upon goodness so long as they hasten to break the fast."',
+ nAr:'سهل بن سعد رضي الله عنه',nEn:'Sahl ibn Saʿd (may Allah be pleased with him)',
+ src:'Sahih al-Bukhari 1957 · Sahih Muslim 1098',srcAr:'صحيح البخاري ١٩٥٧ · صحيح مسلم ١٠٩٨',grade:'muttafaq'},
+{level:'year',anchor:8,icon:'🕌',
+ tAr:'قيام رمضان (التراويح)',tEn:'The night prayer of Ramadan (Tarawih)',
+ bAr:'قيام لياليه إيمانًا واحتسابًا سببٌ لمغفرة ما تقدَّم من الذنب.',
+ bEn:'Standing its nights in faith and hope of reward brings forgiveness of past sins.',
+ hAr:'قال رسول الله ﷺ: «مَنْ قَامَ رَمَضَانَ إِيمَانًا وَاحْتِسَابًا غُفِرَ لَهُ مَا تَقَدَّمَ مِنْ ذَنْبِهِ».',
+ hEn:'The Messenger of Allah ﷺ said: "Whoever stands (in prayer) in Ramadan out of faith and seeking reward, his past sins will be forgiven."',
+ nAr:'أبو هريرة رضي الله عنه',nEn:'Abu Hurayrah (may Allah be pleased with him)',
+ src:'Sahih al-Bukhari 37 · Sahih Muslim 759',srcAr:'صحيح البخاري ٣٧ · صحيح مسلم ٧٥٩',grade:'muttafaq'},
+{level:'year',anchor:8,icon:'✨',
+ tAr:'تحرِّي ليلة القدر',tEn:'Seeking Laylat al-Qadr',
+ bAr:'تُلتمس في الوتر من العشر الأواخر من رمضان.',
+ bEn:'Sought in the odd nights of the last ten of Ramadan.',
+ hAr:'قال رسول الله ﷺ: «تَحَرَّوْا لَيْلَةَ القَدْرِ فِي الوِتْرِ مِنَ العَشْرِ الأَوَاخِرِ مِنْ رَمَضَانَ».',
+ hEn:'The Messenger of Allah ﷺ said: "Seek Laylat al-Qadr in the odd nights of the last ten of Ramadan."',
+ nAr:'عائشة رضي الله عنها',nEn:'ʿAʾishah (may Allah be pleased with her)',
+ src:'Sahih al-Bukhari 2017',srcAr:'صحيح البخاري ٢٠١٧',grade:'sahih'},
+{level:'year',anchor:8,icon:'⛺',
+ tAr:'اعتكاف العشر الأواخر',tEn:'Iʿtikaf in the last ten nights',
+ bAr:'لزم النبي ﷺ اعتكاف العشر الأواخر حتى توفّاه الله.',
+ bEn:'The Prophet ﷺ kept to iʿtikaf in the last ten until Allah took his soul.',
+ hAr:'قالت عائشة رضي الله عنها: «كَانَ النَّبِيُّ ﷺ يَعْتَكِفُ العَشْرَ الأَوَاخِرَ مِنْ رَمَضَانَ حَتَّى تَوَفَّاهُ اللهُ، ثُمَّ اعْتَكَفَ أَزْوَاجُهُ مِنْ بَعْدِهِ».',
+ hEn:'ʿAʾishah (may Allah be pleased with her) said: "The Prophet ﷺ used to observe iʿtikaf in the last ten of Ramadan until Allah took his soul; then his wives observed it after him."',
+ nAr:'عائشة رضي الله عنها',nEn:'ʿAʾishah (may Allah be pleased with her)',
+ src:'Sahih al-Bukhari 2026 · Sahih Muslim 1172',srcAr:'صحيح البخاري ٢٠٢٦ · صحيح مسلم ١١٧٢',grade:'muttafaq'},
+{level:'year',anchor:8,icon:'🕋',
+ tAr:'عمرة في رمضان',tEn:'ʿUmrah in Ramadan',
+ bAr:'عمرة في رمضان تعدل حجّة في الأجر.',
+ bEn:'An ʿUmrah in Ramadan equals a Hajj in reward.',
+ hAr:'قال رسول الله ﷺ: «فَإِنَّ عُمْرَةً فِي رَمَضَانَ تَقْضِي حَجَّةً — أَوْ حَجَّةً مَعِي».',
+ hEn:'The Messenger of Allah ﷺ said: "For an ʿUmrah in Ramadan fulfils (the reward of) a Hajj — or a Hajj with me."',
+ nAr:'عبد الله بن عباس رضي الله عنهما',nEn:'ʿAbdullah ibn ʿAbbas (may Allah be pleased with them both)',
+ src:'Sahih al-Bukhari 1863 · Sahih Muslim 1256',srcAr:'صحيح البخاري ١٨٦٣ · صحيح مسلم ١٢٥٦',grade:'muttafaq'},
+{level:'year',anchor:9,icon:'٦',
+ tAr:'ستٌّ من شوّال',tEn:'Six days of Shawwal',
+ bAr:'صيامها بعد رمضان يعدل صيام الدهر.',
+ bEn:'Fasting them after Ramadan equals fasting a lifetime.',
+ hAr:'قال رسول الله ﷺ: «مَنْ صَامَ رَمَضَانَ ثُمَّ أَتْبَعَهُ سِتًّا مِنْ شَوَّالٍ كَانَ كَصِيَامِ الدَّهْرِ».',
+ hEn:'The Messenger of Allah ﷺ said: "Whoever fasts Ramadan then follows it with six days of Shawwal, it is as if he fasted a lifetime."',
+ nAr:'أبو أيوب الأنصاري رضي الله عنه',nEn:'Abu Ayyub al-Ansari (may Allah be pleased with him)',
+ src:'Sahih Muslim 1164',srcAr:'صحيح مسلم ١١٦٤',grade:'sahih'},
+{level:'year',anchor:9,icon:'🌴',
+ tAr:'سُنن عيد الفطر',tEn:'Sunan of Eid al-Fitr',
+ bAr:'الأكل تمراتٍ وترًا قبل الخروج، ومخالفة الطريق في العودة.',
+ bEn:'Eating an odd number of dates before leaving, and returning by a different route.',
+ hAr:'قال أنس رضي الله عنه: «كَانَ رَسُولُ اللهِ ﷺ لَا يَغْدُو يَوْمَ الفِطْرِ حَتَّى يَأْكُلَ تَمَرَاتٍ... وَيَأْكُلُهُنَّ وِتْرًا». وقال جابر رضي الله عنه: «كَانَ النَّبِيُّ ﷺ إِذَا كَانَ يَوْمُ عِيدٍ خَالَفَ الطَّرِيقَ».',
+ hEn:'Anas said: "The Messenger of Allah ﷺ would not set out on the morning of Eid al-Fitr until he had eaten some dates... and he would eat them in odd numbers." And Jabir said: "On the day of Eid, the Prophet ﷺ would return by a different route."',
+ nAr:'أنس بن مالك وجابر بن عبد الله رضي الله عنهما',nEn:'Anas ibn Malik & Jabir ibn ʿAbdillah (may Allah be pleased with them)',
+ src:'Sahih al-Bukhari 953 · 986',srcAr:'صحيح البخاري ٩٥٣ · ٩٨٦',grade:'sahih'},
+{level:'year',anchor:11,icon:'⛰',
+ tAr:'العمل الصالح في عشر ذي الحجة',tEn:'Good deeds in the first ten of Dhul-Hijjah',
+ bAr:'ما من أيامٍ العمل الصالح فيها أحبُّ إلى الله من هذه الأيام.',
+ bEn:'No days are dearer to Allah for righteous deeds than these ten.',
+ hAr:'قال رسول الله ﷺ: «مَا العَمَلُ فِي أَيَّامٍ أَفْضَلَ مِنْهَا فِي هَذِهِ». قَالُوا: وَلَا الجِهَادُ؟ قَالَ: «وَلَا الجِهَادُ، إِلَّا رَجُلٌ خَرَجَ يُخَاطِرُ بِنَفْسِهِ وَمَالِهِ فَلَمْ يَرْجِعْ بِشَيْءٍ».',
+ hEn:'The Messenger of Allah ﷺ said: "There are no days in which deeds are better than in these." They said: "Not even jihad?" He said: "Not even jihad — except a man who goes out risking himself and his wealth and returns with nothing."',
+ nAr:'عبد الله بن عباس رضي الله عنهما',nEn:'ʿAbdullah ibn ʿAbbas (may Allah be pleased with them both)',
+ src:'Sahih al-Bukhari 969',srcAr:'صحيح البخاري ٩٦٩',grade:'sahih'},
+{level:'year',anchor:11,icon:'🤲',
+ tAr:'صيام يوم عرفة',tEn:'Fasting the Day of ʿArafah',
+ bAr:'لغير الحاجّ: يُكفِّر سنةً ماضيةً وسنةً باقية.',
+ bEn:'For the non-pilgrim: it expiates the past year and the coming year.',
+ hAr:'قال رسول الله ﷺ: «صِيَامُ يَوْمِ عَرَفَةَ، أَحْتَسِبُ عَلَى اللهِ أَنْ يُكَفِّرَ السَّنَةَ الَّتِي قَبْلَهُ وَالسَّنَةَ الَّتِي بَعْدَهُ».',
+ hEn:'The Messenger of Allah ﷺ said: "Fasting the Day of ʿArafah — I hope from Allah that it expiates the year before it and the year after it."',
+ nAr:'أبو قتادة رضي الله عنه',nEn:'Abu Qatadah (may Allah be pleased with him)',
+ src:'Sahih Muslim 1162',srcAr:'صحيح مسلم ١١٦٢',grade:'sahih'},
+{level:'year',anchor:11,icon:'🐏',
+ tAr:'الأُضحية يوم النحر',tEn:'The sacrifice (Udhiyah) on Eid al-Adha',
+ bAr:'ضحّى النبي ﷺ بكبشين أملحين أقرنين، وذبحهما بيده مسمِّيًا مكبِّرًا.',
+ bEn:'The Prophet ﷺ sacrificed two horned, black-and-white rams with his own hand, saying Bismillah and the takbir.',
+ hAr:'قال أنس رضي الله عنه: «ضَحَّى النَّبِيُّ ﷺ بِكَبْشَيْنِ أَمْلَحَيْنِ أَقْرَنَيْنِ، ذَبَحَهُمَا بِيَدِهِ، وَسَمَّى وَكَبَّرَ، وَوَضَعَ رِجْلَهُ عَلَى صِفَاحِهِمَا».',
+ hEn:'Anas (may Allah be pleased with him) said: "The Prophet ﷺ sacrificed two horned rams of black-and-white colour; he slaughtered them with his own hand, pronounced the name of Allah and the takbir, and placed his foot on their sides."',
+ nAr:'أنس بن مالك رضي الله عنه',nEn:'Anas ibn Malik (may Allah be pleased with him)',
+ src:'Sahih al-Bukhari 5565 · Sahih Muslim 1966',srcAr:'صحيح البخاري ٥٥٦٥ · صحيح مسلم ١٩٦٦',grade:'muttafaq'},
+/* ---------- MONTH ---------- */
+{level:'month',anchor:'all',icon:'☽',
+ tAr:'صيام ثلاثة أيام من كل شهر',tEn:'Fasting three days of every month',
+ bAr:'وصية النبي ﷺ لأبي هريرة، وهي كصيام الدهر كله.',
+ bEn:'The Prophet\u2019s ﷺ counsel to Abu Hurayrah — it equals fasting a whole lifetime.',
+ hAr:'قال أبو هريرة رضي الله عنه: «أَوْصَانِي خَلِيلِي ﷺ بِثَلَاثٍ: صِيَامِ ثَلَاثَةِ أَيَّامٍ مِنْ كُلِّ شَهْرٍ، وَرَكْعَتَيِ الضُّحَى، وَأَنْ أُوتِرَ قَبْلَ أَنْ أَنَامَ». وقال ﷺ: «صَوْمُ ثَلَاثَةِ أَيَّامٍ مِنْ كُلِّ شَهْرٍ صَوْمُ الدَّهْرِ كُلِّهِ».',
+ hEn:'Abu Hurayrah said: "My beloved friend ﷺ advised me with three things: fasting three days of every month, the two rakʿahs of Duha, and to pray Witr before I sleep." And he ﷺ said: "Fasting three days of every month is (like) fasting the entire lifetime."',
+ nAr:'أبو هريرة وعبد الله بن عمرو رضي الله عنهم',nEn:'Abu Hurayrah & ʿAbdullah ibn ʿAmr (may Allah be pleased with them)',
+ src:'Sahih al-Bukhari 1178 · 1979',srcAr:'صحيح البخاري ١١٧٨ · ١٩٧٩',grade:'sahih'},
+{level:'month',anchor:13,icon:'🌕',
+ tAr:'الأيام البيض: ١٣ و١٤ و١٥',tEn:'The White Days: 13th, 14th & 15th',
+ bAr:'أفضل مواضع الثلاث: ليالي اكتمال البدر.',
+ bEn:'The preferred placement of the three: the nights of the full moon.',
+ hAr:'قال رسول الله ﷺ لأبي ذر: «إِذَا صُمْتَ مِنَ الشَّهْرِ ثَلَاثًا فَصُمْ ثَلَاثَ عَشْرَةَ وَأَرْبَعَ عَشْرَةَ وَخَمْسَ عَشْرَةَ». وبوَّب البخاري: باب صيام أيام البيض.',
+ hEn:'The Messenger of Allah ﷺ said to Abu Dharr: "If you fast three days of the month, then fast the thirteenth, the fourteenth, and the fifteenth." Imam al-Bukhari titled a chapter of his Sahih: "Fasting the White Days."',
+ nAr:'أبو ذر الغفاري رضي الله عنه',nEn:'Abu Dharr al-Ghifari (may Allah be pleased with him)',
+ src:'Jamiʿ al-Tirmidhi 761 — graded Sahih by al-Albani',srcAr:'جامع الترمذي ٧٦١ — صححه الألباني',grade:'sahih_albani'},
+{level:'month',anchor:1,icon:'🌒',
+ tAr:'الدعاء عند رؤية الهلال',tEn:'Supplication on sighting the new crescent',
+ bAr:'استقبال كل شهرٍ هجري بدعاء الأمن والإيمان.',
+ bEn:'Greeting each Hijri month with a prayer for security and faith.',
+ hAr:'كان النبي ﷺ إذا رأى الهلال قال: «اللَّهُمَّ أَهِلَّهُ عَلَيْنَا بِالأَمْنِ وَالإِيمَانِ، وَالسَّلَامَةِ وَالإِسْلَامِ، رَبِّي وَرَبُّكَ اللهُ».',
+ hEn:'When the Prophet ﷺ saw the new crescent he would say: "O Allah, bring it over us with security and faith, with safety and Islam. My Lord and your Lord is Allah."',
+ nAr:'طلحة بن عبيد الله رضي الله عنه',nEn:'Talhah ibn ʿUbaydillah (may Allah be pleased with him)',
+ src:'Jamiʿ al-Tirmidhi 3451 — graded Sahih by al-Albani',srcAr:'جامع الترمذي ٣٤٥١ — صححه الألباني',grade:'sahih_albani'},
 
-/* ============================================================
-   1. QUESTION GENERATORS
-   Content taken from 3P Learning's official Live Mathletics
-   Levels Guide. Each generator returns {prompt, answer}.
-   Answers in levels 1-5 are always non-negative integers;
-   level 6 is the only level that can produce decimals.
-   ============================================================ */
+/* ---------- WEEK ---------- */
+{level:'week',anchor:5,icon:'💧',
+ tAr:'غُسل يوم الجمعة',tEn:'The Friday bath (Ghusl)',
+ bAr:'من آكد سنن الجمعة لمن يشهدها.',
+ bEn:'Among the most emphasized Friday sunan for whoever attends it.',
+ hAr:'قال رسول الله ﷺ: «إِذَا جَاءَ أَحَدُكُمُ الجُمُعَةَ فَلْيَغْتَسِلْ».',
+ hEn:'The Messenger of Allah ﷺ said: "When any of you comes to Friday (prayer), let him take a bath."',
+ nAr:'عبد الله بن عمر رضي الله عنهما',nEn:'ʿAbdullah ibn ʿUmar (may Allah be pleased with them both)',
+ src:'Sahih al-Bukhari 877 · Sahih Muslim 844',srcAr:'صحيح البخاري ٨٧٧ · صحيح مسلم ٨٤٤',grade:'muttafaq'},
+{level:'week',anchor:5,icon:'🚶',
+ tAr:'التبكير إلى الجمعة',tEn:'Going early to Jumuʿah',
+ bAr:'الرائح في الساعة الأولى كمن قرَّب بَدَنة.',
+ bEn:'Whoever goes in the first hour is like one offering a camel in charity.',
+ hAr:'قال رسول الله ﷺ: «مَنِ اغْتَسَلَ يَوْمَ الجُمُعَةِ غُسْلَ الجَنَابَةِ ثُمَّ رَاحَ فَكَأَنَّمَا قَرَّبَ بَدَنَةً، وَمَنْ رَاحَ فِي السَّاعَةِ الثَّانِيَةِ فَكَأَنَّمَا قَرَّبَ بَقَرَةً...».',
+ hEn:'The Messenger of Allah ﷺ said: "Whoever bathes on Friday like the bath of janabah, then goes (in the first hour), it is as if he offered a camel; whoever goes in the second hour, it is as if he offered a cow..."',
+ nAr:'أبو هريرة رضي الله عنه',nEn:'Abu Hurayrah (may Allah be pleased with him)',
+ src:'Sahih al-Bukhari 881 · Sahih Muslim 850',srcAr:'صحيح البخاري ٨٨١ · صحيح مسلم ٨٥٠',grade:'muttafaq'},
+{level:'week',anchor:5,icon:'📖',
+ tAr:'قراءة سورة الكهف',tEn:'Reciting Surat al-Kahf',
+ bAr:'نورٌ لقارئها ما بين الجمعتين.',
+ bEn:'A light for its reciter between the two Fridays.',
+ hAr:'قال النبي ﷺ: «مَنْ قَرَأَ سُورَةَ الكَهْفِ فِي يَوْمِ الجُمُعَةِ أَضَاءَ لَهُ مِنَ النُّورِ مَا بَيْنَ الجُمُعَتَيْنِ».',
+ hEn:'The Prophet ﷺ said: "Whoever recites Surat al-Kahf on Friday, a light will shine for him between the two Fridays."',
+ nAr:'أبو سعيد الخدري رضي الله عنه',nEn:'Abu Saʿid al-Khudri (may Allah be pleased with him)',
+ src:'al-Sunan al-Kubra (al-Bayhaqi) 5996 — graded Sahih by al-Albani (Sahih al-Jamiʿ 6470)',
+ srcAr:'السنن الكبرى للبيهقي ٥٩٩٦ — صححه الألباني (صحيح الجامع ٦٤٧٠)',grade:'sahih_albani'},
+{level:'week',anchor:5,icon:'🕊',
+ tAr:'الإكثار من الصلاة على النبي ﷺ',tEn:'Abundant salawat upon the Prophet ﷺ',
+ bAr:'صلاتكم معروضةٌ عليه ﷺ يوم الجمعة.',
+ bEn:'Your salawat are presented to him ﷺ on Friday.',
+ hAr:'قال رسول الله ﷺ: «إِنَّ مِنْ أَفْضَلِ أَيَّامِكُمْ يَوْمَ الجُمُعَةِ... فَأَكْثِرُوا عَلَيَّ مِنَ الصَّلَاةِ فِيهِ، فَإِنَّ صَلَاتَكُمْ مَعْرُوضَةٌ عَلَيَّ».',
+ hEn:'The Messenger of Allah ﷺ said: "Among the best of your days is Friday... so send abundant blessings upon me in it, for your blessings are presented to me."',
+ nAr:'أوس بن أوس رضي الله عنه',nEn:'Aws ibn Aws (may Allah be pleased with him)',
+ src:'Sunan Abi Dawud 1047 — graded Sahih by al-Albani',srcAr:'سنن أبي داود ١٠٤٧ — صححه الألباني',grade:'sahih_albani'},
+{level:'week',anchor:5,icon:'⏳',
+ tAr:'تحرّي ساعة الإجابة',tEn:'Seeking the hour of answered duʿa',
+ bAr:'في الجمعة ساعةٌ لا يسأل الله فيها عبدٌ شيئًا إلا أعطاه.',
+ bEn:'On Friday there is an hour in which no servant asks Allah anything except that He grants it.',
+ hAr:'ذكر النبي ﷺ يوم الجمعة فقال: «فِيهِ سَاعَةٌ لَا يُوَافِقُهَا عَبْدٌ مُسْلِمٌ وَهُوَ قَائِمٌ يُصَلِّي يَسْأَلُ اللهَ تَعَالَى شَيْئًا إِلَّا أَعْطَاهُ إِيَّاهُ» — وَأَشَارَ بِيَدِهِ يُقَلِّلُهَا. وفي رواية: «فَالْتَمِسُوهَا آخِرَ سَاعَةٍ بَعْدَ العَصْرِ».',
+ hEn:'The Prophet ﷺ mentioned Friday and said: "In it is an hour which no Muslim servant encounters while standing in prayer, asking Allah for something, except that He gives it to him" — and he gestured with his hand to show how brief it is. In another narration: "So seek it in the last hour after ʿAsr."',
+ nAr:'أبو هريرة رضي الله عنه',nEn:'Abu Hurayrah (may Allah be pleased with him)',
+ src:'Sahih al-Bukhari 935 · Sahih Muslim 852 · Abu Dawud 1048 (Sahih, al-Albani)',srcAr:'صحيح البخاري ٩٣٥ · صحيح مسلم ٨٥٢ · أبو داود ١٠٤٨ (صححه الألباني)',grade:'muttafaq'},
+{level:'week',anchor:1,icon:'🌤',
+ tAr:'صيام يوم الاثنين',tEn:'Fasting on Monday',
+ bAr:'يوم مولده ﷺ ويوم بُعث — أو أُنزل عليه فيه.',
+ bEn:'The day he ﷺ was born, and the day of his mission — or when revelation began.',
+ hAr:'سُئل رسول الله ﷺ عن صوم يوم الاثنين فقال: «ذَاكَ يَوْمٌ وُلِدْتُ فِيهِ، وَيَوْمٌ بُعِثْتُ — أَوْ أُنْزِلَ عَلَيَّ فِيهِ».',
+ hEn:'The Messenger of Allah ﷺ was asked about fasting on Monday, and he said: "That is the day on which I was born, and the day I was sent — or on which revelation came down to me."',
+ nAr:'أبو قتادة رضي الله عنه',nEn:'Abu Qatadah (may Allah be pleased with him)',
+ src:'Sahih Muslim 1162',srcAr:'صحيح مسلم ١١٦٢',grade:'sahih'},
+{level:'week',anchor:4,icon:'🚪',
+ tAr:'الاثنين والخميس: عرض الأعمال',tEn:'Monday & Thursday: deeds presented',
+ bAr:'تُفتح أبواب الجنة فيهما، ويُغفر لكل عبدٍ لا يشرك بالله.',
+ bEn:'The gates of Paradise are opened, and every servant who associates nothing with Allah is forgiven.',
+ hAr:'قال رسول الله ﷺ: «تُفْتَحُ أَبْوَابُ الجَنَّةِ يَوْمَ الِاثْنَيْنِ وَيَوْمَ الخَمِيسِ، فَيُغْفَرُ لِكُلِّ عَبْدٍ لَا يُشْرِكُ بِاللهِ شَيْئًا، إِلَّا رَجُلًا كَانَتْ بَيْنَهُ وَبَيْنَ أَخِيهِ شَحْنَاءُ».',
+ hEn:'The Messenger of Allah ﷺ said: "The gates of Paradise are opened on Monday and Thursday, and every servant who associates nothing with Allah is forgiven — except a man between whom and his brother there is rancour."',
+ nAr:'أبو هريرة رضي الله عنه',nEn:'Abu Hurayrah (may Allah be pleased with him)',
+ src:'Sahih Muslim 2565',srcAr:'صحيح مسلم ٢٥٦٥',grade:'sahih'},
+/* ---------- DAY ---------- */
+{level:'day',anchor:'wake',icon:'🌅',
+ tAr:'ذِكر الاستيقاظ',tEn:'The waking remembrance',
+ bAr:'أول كلام اليوم: حمدُ الذي أحيانا بعد ما أماتنا.',
+ bEn:'The first words of the day: praise of the One who gave us life after death (of sleep).',
+ hAr:'كان النبي ﷺ إذا استيقظ قال: «الحَمْدُ لِلَّهِ الَّذِي أَحْيَانَا بَعْدَ مَا أَمَاتَنَا وَإِلَيْهِ النُّشُورُ».',
+ hEn:'When the Prophet ﷺ awoke he would say: "All praise is for Allah who gave us life after having caused us to die, and to Him is the resurrection."',
+ nAr:'حذيفة بن اليمان رضي الله عنه',nEn:'Hudhayfah ibn al-Yaman (may Allah be pleased with him)',
+ src:'Sahih al-Bukhari 6312',srcAr:'صحيح البخاري ٦٣١٢',grade:'sahih'},
+{level:'day',anchor:'wake',icon:'🪥',
+ tAr:'السِّواك عند القيام',tEn:'The siwak upon rising',
+ bAr:'كان ﷺ يستاك إذا قام من نومه.',
+ bEn:'He ﷺ would clean his mouth with the siwak whenever he rose from sleep.',
+ hAr:'قال حذيفة رضي الله عنه: «كَانَ النَّبِيُّ ﷺ إِذَا قَامَ مِنَ اللَّيْلِ يَشُوصُ فَاهُ بِالسِّوَاكِ». وقال ﷺ: «لَوْلَا أَنْ أَشُقَّ عَلَى أُمَّتِي لَأَمَرْتُهُمْ بِالسِّوَاكِ مَعَ كُلِّ صَلَاةٍ».',
+ hEn:'Hudhayfah said: "When the Prophet ﷺ got up at night, he would scrub his mouth with the siwak." And he ﷺ said: "Were it not that I would burden my Ummah, I would have commanded them to use the siwak with every prayer."',
+ nAr:'حذيفة وأبو هريرة رضي الله عنهما',nEn:'Hudhayfah & Abu Hurayrah (may Allah be pleased with them)',
+ src:'Sahih al-Bukhari 245 · 887',srcAr:'صحيح البخاري ٢٤٥ · ٨٨٧',grade:'sahih'},
+{level:'day',anchor:'fajr',icon:'🌄',
+ tAr:'ركعتا الفجر',tEn:'The two rakʿahs before Fajr',
+ bAr:'خيرٌ من الدنيا وما فيها.',
+ bEn:'Better than the world and all it contains.',
+ hAr:'قال رسول الله ﷺ: «رَكْعَتَا الفَجْرِ خَيْرٌ مِنَ الدُّنْيَا وَمَا فِيهَا».',
+ hEn:'The Messenger of Allah ﷺ said: "The two rakʿahs of Fajr are better than the world and everything in it."',
+ nAr:'عائشة رضي الله عنها',nEn:'ʿAʾishah (may Allah be pleased with her)',
+ src:'Sahih Muslim 725',srcAr:'صحيح مسلم ٧٢٥',grade:'sahih'},
+{level:'day',anchor:'fajr',icon:'🤍',
+ tAr:'سيّد الاستغفار (صباحًا ومساءً)',tEn:'The Master of Seeking Forgiveness (morning & evening)',
+ bAr:'من قاله موقنًا به فمات في يومه أو ليلته فهو من أهل الجنة.',
+ bEn:'Whoever says it with certainty and dies that day or night is among the people of Paradise.',
+ hAr:'«اللَّهُمَّ أَنْتَ رَبِّي لَا إِلَهَ إِلَّا أَنْتَ، خَلَقْتَنِي وَأَنَا عَبْدُكَ، وَأَنَا عَلَى عَهْدِكَ وَوَعْدِكَ مَا اسْتَطَعْتُ، أَعُوذُ بِكَ مِنْ شَرِّ مَا صَنَعْتُ، أَبُوءُ لَكَ بِنِعْمَتِكَ عَلَيَّ، وَأَبُوءُ لَكَ بِذَنْبِي، فَاغْفِرْ لِي؛ فَإِنَّهُ لَا يَغْفِرُ الذُّنُوبَ إِلَّا أَنْتَ».',
+ hEn:'"O Allah, You are my Lord; there is no god but You. You created me and I am Your servant, and I keep Your covenant and promise as much as I am able. I seek refuge in You from the evil of what I have done. I acknowledge Your favour upon me, and I acknowledge my sin — so forgive me, for none forgives sins but You."',
+ nAr:'شداد بن أوس رضي الله عنه',nEn:'Shaddad ibn Aws (may Allah be pleased with him)',
+ src:'Sahih al-Bukhari 6306',srcAr:'صحيح البخاري ٦٣٠٦',grade:'sahih'},
+{level:'day',anchor:'duha',icon:'☀️',
+ tAr:'صلاة الضحى',tEn:'The Duha prayer',
+ bAr:'ركعتان تجزئان عن صدقةٍ على كل مفصلٍ من مفاصلك.',
+ bEn:'Two rakʿahs suffice as charity for every joint of your body.',
+ hAr:'قال رسول الله ﷺ: «يُصْبِحُ عَلَى كُلِّ سُلَامَى مِنْ أَحَدِكُمْ صَدَقَةٌ... وَيُجْزِئُ مِنْ ذَلِكَ رَكْعَتَانِ يَرْكَعُهُمَا مِنَ الضُّحَى».',
+ hEn:'The Messenger of Allah ﷺ said: "Each morning, charity is due upon every joint of your body... and two rakʿahs which one prays in the forenoon suffice for all of that."',
+ nAr:'أبو ذر رضي الله عنه',nEn:'Abu Dharr (may Allah be pleased with him)',
+ src:'Sahih Muslim 720',srcAr:'صحيح مسلم ٧٢٠',grade:'sahih'},
+{level:'day',anchor:'dhuhr',icon:'🏠',
+ tAr:'السنن الرواتب: اثنتا عشرة ركعة',tEn:'The twelve routine (Rawatib) rakʿahs',
+ bAr:'من حافظ عليها كل يوم بُني له بيتٌ في الجنة.',
+ bEn:'Whoever keeps them daily, a house is built for him in Paradise.',
+ hAr:'قال رسول الله ﷺ: «مَا مِنْ عَبْدٍ مُسْلِمٍ يُصَلِّي لِلَّهِ كُلَّ يَوْمٍ ثِنْتَيْ عَشْرَةَ رَكْعَةً تَطَوُّعًا غَيْرَ فَرِيضَةٍ، إِلَّا بَنَى اللهُ لَهُ بَيْتًا فِي الجَنَّةِ». وهي: أربعٌ قبل الظهر وثنتان بعدها، وثنتان بعد المغرب، وثنتان بعد العشاء، وثنتان قبل الفجر.',
+ hEn:'The Messenger of Allah ﷺ said: "No Muslim servant prays for Allah twelve voluntary rakʿahs every day, besides the obligatory, except that Allah builds for him a house in Paradise." They are: four before Dhuhr and two after, two after Maghrib, two after ʿIsha, and two before Fajr.',
+ nAr:'أم حبيبة رضي الله عنها',nEn:'Umm Habibah (may Allah be pleased with her)',
+ src:'Sahih Muslim 728',srcAr:'صحيح مسلم ٧٢٨',grade:'sahih'},
+{level:'day',anchor:'dhuhr',icon:'🍞',
+ tAr:'سُنن الطعام',tEn:'Sunan of eating',
+ bAr:'التسمية، والأكل باليمين، ومما يليك.',
+ bEn:'Saying Bismillah, eating with the right hand, and from what is nearest to you.',
+ hAr:'قال رسول الله ﷺ لعمر بن أبي سلمة: «يَا غُلَامُ، سَمِّ اللهَ، وَكُلْ بِيَمِينِكَ، وَكُلْ مِمَّا يَلِيكَ».',
+ hEn:'The Messenger of Allah ﷺ said to ʿUmar ibn Abi Salamah: "O young man, say the name of Allah, eat with your right hand, and eat from what is directly in front of you."',
+ nAr:'عمر بن أبي سلمة رضي الله عنهما',nEn:'ʿUmar ibn Abi Salamah (may Allah be pleased with them)',
+ src:'Sahih al-Bukhari 5376 · Sahih Muslim 2022',srcAr:'صحيح البخاري ٥٣٧٦ · صحيح مسلم ٢٠٢٢',grade:'muttafaq'},
+{level:'day',anchor:'asr',icon:'📿',
+ tAr:'مائة تسبيحة في اليوم',tEn:'One hundred tasbihat a day',
+ bAr:'«سبحان الله وبحمده» مائة مرة تحطُّ الخطايا ولو كانت مثل زبد البحر.',
+ bEn:'"SubhanAllahi wa bihamdih" a hundred times erases sins even if they are like the foam of the sea.',
+ hAr:'قال رسول الله ﷺ: «مَنْ قَالَ: سُبْحَانَ اللهِ وَبِحَمْدِهِ، فِي يَوْمٍ مِائَةَ مَرَّةٍ، حُطَّتْ خَطَايَاهُ وَإِنْ كَانَتْ مِثْلَ زَبَدِ البَحْرِ».',
+ hEn:'The Messenger of Allah ﷺ said: "Whoever says: Glory be to Allah and praise be to Him, one hundred times in a day, his sins are erased even if they were like the foam of the sea."',
+ nAr:'أبو هريرة رضي الله عنه',nEn:'Abu Hurayrah (may Allah be pleased with him)',
+ src:'Sahih al-Bukhari 6405 · Sahih Muslim 2691',srcAr:'صحيح البخاري ٦٤٠٥ · صحيح مسلم ٢٦٩١',grade:'muttafaq'},
+{level:'day',anchor:'isha',icon:'🛡',
+ tAr:'آية الكرسي عند النوم',tEn:'Ayat al-Kursi before sleep',
+ bAr:'لا يزال عليك من الله حافظ، ولا يقربك شيطانٌ حتى تصبح.',
+ bEn:'A guardian from Allah remains over you, and no devil approaches you until morning.',
+ hAr:'قال النبي ﷺ مصدِّقًا لما أُخبر به أبو هريرة: «إِذَا أَوَيْتَ إِلَى فِرَاشِكَ فَاقْرَأْ آيَةَ الكُرْسِيِّ، لَنْ يَزَالَ عَلَيْكَ مِنَ اللهِ حَافِظٌ، وَلَا يَقْرَبُكَ شَيْطَانٌ حَتَّى تُصْبِحَ» — وقال ﷺ: «صَدَقَكَ وَهُوَ كَذُوبٌ».',
+ hEn:'The Prophet ﷺ confirmed what Abu Hurayrah was told: "When you retire to your bed, recite Ayat al-Kursi; a guardian from Allah will remain over you, and no devil will approach you until morning." He ﷺ said: "He told you the truth, though he is a great liar."',
+ nAr:'أبو هريرة رضي الله عنه',nEn:'Abu Hurayrah (may Allah be pleased with him)',
+ src:'Sahih al-Bukhari 2311',srcAr:'صحيح البخاري ٢٣١١',grade:'sahih'},
+{level:'day',anchor:'night',icon:'🌌',
+ tAr:'قيام الليل',tEn:'The night prayer (Qiyam al-Layl)',
+ bAr:'أفضل الصلاة بعد الفريضة.',
+ bEn:'The best prayer after the obligatory prayers.',
+ hAr:'قال رسول الله ﷺ: «أَفْضَلُ الصَّلَاةِ بَعْدَ الفَرِيضَةِ صَلَاةُ اللَّيْلِ».',
+ hEn:'The Messenger of Allah ﷺ said: "The best prayer after the obligatory prayer is the night prayer."',
+ nAr:'أبو هريرة رضي الله عنه',nEn:'Abu Hurayrah (may Allah be pleased with him)',
+ src:'Sahih Muslim 1163',srcAr:'صحيح مسلم ١١٦٣',grade:'sahih'},
+{level:'day',anchor:'night',icon:'🕯',
+ tAr:'الوِتر خاتمة الليل',tEn:'Witr, the seal of the night',
+ bAr:'اجعلوا آخر صلاتكم بالليل وترًا.',
+ bEn:'Make the last of your night prayer odd (Witr).',
+ hAr:'قال رسول الله ﷺ: «اجْعَلُوا آخِرَ صَلَاتِكُمْ بِاللَّيْلِ وِتْرًا».',
+ hEn:'The Messenger of Allah ﷺ said: "Make the last of your prayer at night Witr (an odd number)."',
+ nAr:'عبد الله بن عمر رضي الله عنهما',nEn:'ʿAbdullah ibn ʿUmar (may Allah be pleased with them both)',
+ src:'Sahih al-Bukhari 998 · Sahih Muslim 751',srcAr:'صحيح البخاري ٩٩٨ · صحيح مسلم ٧٥١',grade:'muttafaq'},
+{level:'day',anchor:'sleep',icon:'🛏',
+ tAr:'الوضوء والنوم على الشقّ الأيمن',tEn:'Wudu and sleeping on the right side',
+ bAr:'هدي النبي ﷺ عند إتيان المضجع، مع دعاء تسليم النفس.',
+ bEn:'The Prophetic way when going to bed, with the duʿa of surrendering oneself to Allah.',
+ hAr:'قال رسول الله ﷺ: «إِذَا أَتَيْتَ مَضْجَعَكَ فَتَوَضَّأْ وُضُوءَكَ لِلصَّلَاةِ، ثُمَّ اضْطَجِعْ عَلَى شِقِّكَ الأَيْمَنِ، ثُمَّ قُلْ: اللَّهُمَّ أَسْلَمْتُ وَجْهِي إِلَيْكَ، وَفَوَّضْتُ أَمْرِي إِلَيْكَ... وَاجْعَلْهُنَّ آخِرَ مَا تَقُولُ».',
+ hEn:'The Messenger of Allah ﷺ said: "When you come to your bed, perform wudu as you would for prayer, then lie on your right side and say: O Allah, I submit my face to You and entrust my affair to You... and make these the last words you speak."',
+ nAr:'البراء بن عازب رضي الله عنهما',nEn:'al-Baraʾ ibn ʿAzib (may Allah be pleased with them)',
+ src:'Sahih al-Bukhari 247 · Sahih Muslim 2710',srcAr:'صحيح البخاري ٢٤٧ · صحيح مسلم ٢٧١٠',grade:'muttafaq'},
+{level:'day',anchor:'sleep',icon:'🌠',
+ tAr:'دعاء النوم',tEn:'The sleeping duʿa',
+ bAr:'«باسمك اللهم أموت وأحيا».',
+ bEn:'"In Your name, O Allah, I die and I live."',
+ hAr:'كان النبي ﷺ إذا أراد أن ينام قال: «بِاسْمِكَ اللَّهُمَّ أَمُوتُ وَأَحْيَا».',
+ hEn:'When the Prophet ﷺ intended to sleep he would say: "In Your name, O Allah, I die and I live."',
+ nAr:'حذيفة بن اليمان رضي الله عنه',nEn:'Hudhayfah ibn al-Yaman (may Allah be pleased with him)',
+ src:'Sahih al-Bukhari 6324',srcAr:'صحيح البخاري ٦٣٢٤',grade:'sahih'},
+/* ---------- YEAR (additions) ---------- */
+{level:'year',anchor:8,icon:'🎁',q:true,
+ tAr:'الجود ومدارسة القرآن في رمضان',tEn:'Generosity & Qurʾan review in Ramadan',
+ bAr:'كان ﷺ أجود ما يكون في رمضان حين يدارسه جبريل القرآن.',
+ bEn:'He ﷺ was at his most generous in Ramadan, when Jibril reviewed the Qurʾan with him.',
+ hAr:'قال ابن عباس رضي الله عنهما: «كَانَ رَسُولُ اللهِ ﷺ أَجْوَدَ النَّاسِ، وَكَانَ أَجْوَدُ مَا يَكُونُ فِي رَمَضَانَ حِينَ يَلْقَاهُ جِبْرِيلُ، وَكَانَ يَلْقَاهُ فِي كُلِّ لَيْلَةٍ مِنْ رَمَضَانَ فَيُدَارِسُهُ القُرْآنَ».',
+ hEn:'Ibn ʿAbbas said: "The Messenger of Allah ﷺ was the most generous of people, and he was at his most generous in Ramadan when Jibril met him; and Jibril would meet him every night of Ramadan to review the Qurʾan with him."',
+ nAr:'عبد الله بن عباس رضي الله عنهما',nEn:'ʿAbdullah ibn ʿAbbas (may Allah be pleased with them both)',
+ src:'Sahih al-Bukhari 6 · Sahih Muslim 2308',srcAr:'صحيح البخاري ٦ · صحيح مسلم ٢٣٠٨',grade:'muttafaq'},
+{level:'year',anchor:8,icon:'🍲',
+ tAr:'تفطير الصائمين',tEn:'Feeding those who fast',
+ bAr:'لمن فطَّر صائمًا مثلُ أجره من غير أن ينقص من أجر الصائم شيء.',
+ bEn:'Whoever gives a fasting person their iftar earns the same reward, without lessening theirs.',
+ hAr:'قال رسول الله ﷺ: «مَنْ فَطَّرَ صَائِمًا كَانَ لَهُ مِثْلُ أَجْرِهِ، غَيْرَ أَنَّهُ لَا يَنْقُصُ مِنْ أَجْرِ الصَّائِمِ شَيْءٌ».',
+ hEn:'The Messenger of Allah ﷺ said: "Whoever provides a fasting person with food to break the fast will have a reward like his, without the fasting person\u2019s reward being diminished at all."',
+ nAr:'زيد بن خالد الجهني رضي الله عنه',nEn:'Zayd ibn Khalid al-Juhani (may Allah be pleased with him)',
+ src:'Jamiʿ al-Tirmidhi 807 — graded Sahih by al-Albani',srcAr:'جامع الترمذي ٨٠٧ — صححه الألباني',grade:'sahih_albani'},
+{level:'year',anchor:9,icon:'🕌',q:true,
+ tAr:'قراءة صلاة العيدين',tEn:'Recitation in the two Eid prayers',
+ bAr:'بقاف واقتربت الساعة، أو بالأعلى والغاشية.',
+ bEn:'With Qaf and al-Qamar, or with al-Aʿla and al-Ghashiyah.',
+ hAr:'كان رسول الله ﷺ يقرأ في الأضحى والفطر بـ«ق وَالقُرْآنِ المَجِيدِ» و«اقْتَرَبَتِ السَّاعَةُ وَانْشَقَّ القَمَرُ». وعن النعمان بن بشير: كان يقرأ في العيدين وفي الجمعة بـ«سَبِّحِ اسْمَ رَبِّكَ الأَعْلَى» و«هَلْ أَتَاكَ حَدِيثُ الغَاشِيَةِ»، وإذا اجتمع العيد والجمعة في يوم واحد قرأ بهما في الصلاتين.',
+ hEn:'The Messenger of Allah ﷺ would recite in the Eid prayers Surat Qaf and Surat al-Qamar. And Nuʿman ibn Bashir reported that he recited al-Aʿla and al-Ghashiyah in the two Eids and in Jumuʿah; and when Eid and Friday coincided, he recited them in both prayers.',
+ nAr:'أبو واقد الليثي والنعمان بن بشير رضي الله عنهما',nEn:'Abu Waqid al-Laythi & al-Nuʿman ibn Bashir (may Allah be pleased with them)',
+ src:'Sahih Muslim 891 · 878',srcAr:'صحيح مسلم ٨٩١ · ٨٧٨',grade:'sahih'},
+{level:'year',anchor:11,icon:'🔊',
+ tAr:'التكبير في أيام العشر',tEn:'Takbir throughout the ten days',
+ bAr:'كان ابن عمر وأبو هريرة يكبِّران في الأسواق فيكبِّر الناس بتكبيرهما.',
+ bEn:'Ibn ʿUmar and Abu Hurayrah would proclaim the takbir in the markets, and the people would join them.',
+ hAr:'ذكر البخاري: «وَكَانَ ابْنُ عُمَرَ وَأَبُو هُرَيْرَةَ يَخْرُجَانِ إِلَى السُّوقِ فِي أَيَّامِ العَشْرِ يُكَبِّرَانِ وَيُكَبِّرُ النَّاسُ بِتَكْبِيرِهِمَا». الله أكبر، الله أكبر، لا إله إلا الله، والله أكبر، الله أكبر ولله الحمد.',
+ hEn:'Al-Bukhari recorded: "Ibn ʿUmar and Abu Hurayrah used to go out to the marketplace in the (first) ten days (of Dhul-Hijjah) saying the takbir, and the people would say it because of theirs." Allahu akbar, Allahu akbar, la ilaha illa Allah; wallahu akbar, Allahu akbar, wa lillahil-hamd.',
+ nAr:'ابن عمر وأبو هريرة رضي الله عنهم',nEn:'Ibn ʿUmar & Abu Hurayrah (may Allah be pleased with them)',
+ src:'Sahih al-Bukhari (muʿallaq, before 969)',srcAr:'صحيح البخاري (معلقًا قبل ٩٦٩)',grade:'athar'},
+{level:'year',anchor:11,icon:'🍖',
+ tAr:'يوم الأضحى: الأكل بعد الصلاة',tEn:'Eid al-Adha: eating after the prayer',
+ bAr:'كان ﷺ يأكل قبل صلاة الفطر ولا يأكل يوم الأضحى حتى يصلي.',
+ bEn:'He ﷺ ate before the Eid al-Fitr prayer, and on al-Adha he would not eat until after praying.',
+ hAr:'قال بريدة رضي الله عنه: «كَانَ النَّبِيُّ ﷺ لَا يَخْرُجُ يَوْمَ الفِطْرِ حَتَّى يَطْعَمَ، وَلَا يَطْعَمُ يَوْمَ الأَضْحَى حَتَّى يُصَلِّيَ».',
+ hEn:'Buraydah (may Allah be pleased with him) said: "The Prophet ﷺ would not go out on the day of al-Fitr until he had eaten, and he would not eat on the day of al-Adha until he had prayed."',
+ nAr:'بريدة بن الحصيب رضي الله عنه',nEn:'Buraydah ibn al-Husayb (may Allah be pleased with him)',
+ src:'Jamiʿ al-Tirmidhi 542 — graded Sahih by al-Albani',srcAr:'جامع الترمذي ٥٤٢ — صححه الألباني',grade:'sahih_albani'},
 
-/* ---- shared building blocks ---- */
-const gAdd     = max => { const a = ri(1, max), b = ri(1, max); return { prompt:`${a} + ${b} =`, answer:a + b }; };
-const gSub     = max => { const a = ri(2, max), b = ri(1, a);   return { prompt:`${a} − ${b} =`, answer:a - b }; };
-const gDouble  = max => { const n = ri(1, max);                 return { prompt:`Double ${n} =`, answer:n * 2 }; };
-const gHalf    = max => { const n = ri(1, max);                 return { prompt:`Half of ${n * 2} =`, answer:n }; };
-const gMissAdd = max => { const a = ri(1, max), b = ri(1, max); return { prompt:`${a} + ☐ = ${a + b}`, answer:b }; };
-const gTable   = (tables, upTo) => { const t = pick(tables), n = ri(1, upTo); return { prompt:`${t} × ${n} =`, answer:t * n }; };
-const gDivide  = (tables, upTo) => { const t = pick(tables), n = ri(1, upTo); return { prompt:`${t * n} ÷ ${t} =`, answer:n }; };
-const gMissFac = upTo => { const a = ri(2, upTo), b = ri(2, upTo); return { prompt:`${a} × ☐ = ${a * b}`, answer:b }; };
+/* ---------- MONTH (additions) ---------- */
+{level:'month',anchor:'all',icon:'📖',q:true,
+ tAr:'ختمة القرآن كل شهر: جزءٌ كل ليلة',tEn:'A Qurʾan khatmah every month: a juzʾ a night',
+ bAr:'أمرٌ نبوي لعبد الله بن عمرو، ولمن وجد قوةً: ختمةٌ في سبع.',
+ bEn:'A Prophetic instruction to ʿAbdullah ibn ʿAmr; and for the strong, a khatmah in seven.',
+ hAr:'قال رسول الله ﷺ لعبد الله بن عمرو: «اقْرَإِ القُرْآنَ فِي شَهْرٍ». قُلْتُ: إِنِّي أَجِدُ قُوَّةً، حَتَّى قَالَ: «فَاقْرَأْهُ فِي سَبْعٍ وَلَا تَزِدْ عَلَى ذَلِكَ». فقراءة جزءٍ كل ليلة تُتِمُّ الختمة مع اكتمال الشهر.',
+ hEn:'The Messenger of Allah ﷺ said to ʿAbdullah ibn ʿAmr: "Recite the Qurʾan in a month." I said: I find strength in me, until he said: "Then recite it in seven, and do not go beyond that." A juzʾ each night completes the khatmah as the month completes.',
+ nAr:'عبد الله بن عمرو بن العاص رضي الله عنهما',nEn:'ʿAbdullah ibn ʿAmr ibn al-ʿAs (may Allah be pleased with them both)',
+ src:'Sahih al-Bukhari 5054 · Sahih Muslim 1159',srcAr:'صحيح البخاري ٥٠٥٤ · صحيح مسلم ١١٥٩',grade:'muttafaq'},
 
-/* ---- level 5: conversions ---- */
-function gTimeConv() {
-  const n = ri(2, 12);
-  return pick([
-    () => ({ prompt:`${n} minutes = ☐ seconds`, answer:n * 60 }),
-    () => ({ prompt:`${n} hours = ☐ minutes`,   answer:n * 60 }),
-    () => ({ prompt:`${n * 60} seconds = ☐ minutes`, answer:n }),
-    () => ({ prompt:`${n * 60} minutes = ☐ hours`,   answer:n }),
-    () => ({ prompt:`${n} days = ☐ hours`,      answer:n * 24 }),
-    () => ({ prompt:`${n} weeks = ☐ days`,      answer:n * 7 }),
-  ])();
-}
-function gLengthConv() {
-  const n = ri(2, 12);
-  return pick([
-    () => ({ prompt:`${n} cm = ☐ mm`, answer:n * 10 }),
-    () => ({ prompt:`${n} m = ☐ cm`,  answer:n * 100 }),
-    () => ({ prompt:`${n} km = ☐ m`,  answer:n * 1000 }),
-    () => ({ prompt:`${n * 10} mm = ☐ cm`,  answer:n }),
-    () => ({ prompt:`${n * 100} cm = ☐ m`,  answer:n }),
-    () => ({ prompt:`${n * 1000} m = ☐ km`, answer:n }),
-  ])();
-}
+/* ---------- WEEK (additions) ---------- */
+{level:'week',anchor:5,icon:'🌿',
+ tAr:'الطِّيب وأحسن الثياب',tEn:'Perfume and one\u2019s finest for Jumuʿah',
+ bAr:'غُسلٌ وطُهرٌ ودُهنٌ وطِيب، ثم إنصاتٌ للخطبة: غفرانٌ إلى الجمعة الأخرى.',
+ bEn:'Bathing, oiling, perfume, then attentive silence: forgiveness until the next Friday.',
+ hAr:'قال رسول الله ﷺ: «لَا يَغْتَسِلُ رَجُلٌ يَوْمَ الجُمُعَةِ، وَيَتَطَهَّرُ مَا اسْتَطَاعَ مِنْ طُهْرٍ، وَيَدَّهِنُ مِنْ دُهْنِهِ، أَوْ يَمَسُّ مِنْ طِيبِ بَيْتِهِ، ثُمَّ يَخْرُجُ فَلَا يُفَرِّقُ بَيْنَ اثْنَيْنِ، ثُمَّ يُصَلِّي مَا كُتِبَ لَهُ، ثُمَّ يُنْصِتُ إِذَا تَكَلَّمَ الإِمَامُ، إِلَّا غُفِرَ لَهُ مَا بَيْنَهُ وَبَيْنَ الجُمُعَةِ الأُخْرَى».',
+ hEn:'The Messenger of Allah ﷺ said: "No man bathes on Friday, purifies himself as much as he can, applies his oil or touches some of the perfume of his house, then goes out without separating two people, prays what is written for him, then keeps silent when the imam speaks, except that he is forgiven what is between it and the next Friday."',
+ nAr:'سلمان الفارسي رضي الله عنه',nEn:'Salman al-Farisi (may Allah be pleased with him)',
+ src:'Sahih al-Bukhari 883',srcAr:'صحيح البخاري ٨٨٣',grade:'sahih'},
+{level:'week',anchor:5,icon:'🕮',q:true,
+ tAr:'فجر الجمعة: السجدة والإنسان',tEn:'Friday Fajr: al-Sajdah & al-Insan',
+ bAr:'كان ﷺ يقرأ بهما في صلاة فجر يوم الجمعة.',
+ bEn:'He ﷺ would recite them in the Fajr prayer of Friday.',
+ hAr:'قال أبو هريرة رضي الله عنه: «كَانَ النَّبِيُّ ﷺ يَقْرَأُ فِي الجُمُعَةِ فِي صَلَاةِ الفَجْرِ: الم تَنْزِيلُ (السَّجْدَةَ)، وَهَلْ أَتَى عَلَى الإِنْسَانِ».',
+ hEn:'Abu Hurayrah said: "On Friday, the Prophet ﷺ would recite in the Fajr prayer: Alif-Lam-Mim Tanzil (al-Sajdah) and Hal ata ʿala al-insan (al-Insan)."',
+ nAr:'أبو هريرة رضي الله عنه',nEn:'Abu Hurayrah (may Allah be pleased with him)',
+ src:'Sahih al-Bukhari 891 · Sahih Muslim 880',srcAr:'صحيح البخاري ٨٩١ · صحيح مسلم ٨٨٠',grade:'muttafaq'},
+{level:'week',anchor:5,icon:'🎙',q:true,
+ tAr:'قراءة صلاة الجمعة',tEn:'Recitation in the Jumuʿah prayer',
+ bAr:'بالجمعة والمنافقين، أو بالأعلى والغاشية.',
+ bEn:'With al-Jumuʿah and al-Munafiqun, or al-Aʿla and al-Ghashiyah.',
+ hAr:'كان رسول الله ﷺ يقرأ في صلاة الجمعة بسورة الجمعة والمنافقين. وعن النعمان بن بشير: كان يقرأ فيها بـ«سَبِّحِ اسْمَ رَبِّكَ الأَعْلَى» و«هَلْ أَتَاكَ حَدِيثُ الغَاشِيَةِ».',
+ hEn:'The Messenger of Allah ﷺ would recite in the Jumuʿah prayer Surat al-Jumuʿah and al-Munafiqun; and al-Nuʿman ibn Bashir reported that he recited in it al-Aʿla and al-Ghashiyah.',
+ nAr:'ابن عباس والنعمان بن بشير رضي الله عنهم',nEn:'Ibn ʿAbbas & al-Nuʿman ibn Bashir (may Allah be pleased with them)',
+ src:'Sahih Muslim 879 · 878',srcAr:'صحيح مسلم ٨٧٩ · ٨٧٨',grade:'sahih'},
+{level:'week',anchor:5,icon:'👣',
+ tAr:'المشي والدنوّ من الإمام والإنصات',tEn:'Walking, sitting near the imam, and listening',
+ bAr:'بكل خطوةٍ أجر سنةٍ صيامها وقيامها لمن مشى وأنصت ولم يلغُ.',
+ bEn:'For every step, the reward of a year\u2019s fasting and prayer, for one who walks, listens, and avoids idle talk.',
+ hAr:'قال رسول الله ﷺ: «مَنْ غَسَّلَ يَوْمَ الجُمُعَةِ وَاغْتَسَلَ، ثُمَّ بَكَّرَ وَابْتَكَرَ، وَمَشَى وَلَمْ يَرْكَبْ، وَدَنَا مِنَ الإِمَامِ فَاسْتَمَعَ وَلَمْ يَلْغُ، كَانَ لَهُ بِكُلِّ خُطْوَةٍ عَمَلُ سَنَةٍ، أَجْرُ صِيَامِهَا وَقِيَامِهَا». وقال ﷺ: «إِذَا قُلْتَ لِصَاحِبِكَ أَنْصِتْ يَوْمَ الجُمُعَةِ وَالإِمَامُ يَخْطُبُ فَقَدْ لَغَوْتَ».',
+ hEn:'The Messenger of Allah ﷺ said: "Whoever bathes on Friday, goes early, walks and does not ride, sits close to the imam, listens, and does not engage in idle talk, will have for every step the reward of a year of its fasting and its prayer." And he ﷺ said: "If you say to your companion, Be quiet, on Friday while the imam is delivering the khutbah, you have engaged in idle talk."',
+ nAr:'أوس بن أوس وأبو هريرة رضي الله عنهما',nEn:'Aws ibn Aws & Abu Hurayrah (may Allah be pleased with them)',
+ src:'Abu Dawud 345 (Sahih, al-Albani) · Sahih al-Bukhari 934',srcAr:'أبو داود ٣٤٥ (صححه الألباني) · صحيح البخاري ٩٣٤',grade:'sahih_albani'},
+{level:'week',anchor:5,icon:'🛡',
+ tAr:'عدم إفراد الجمعة بالصيام',tEn:'Not singling out Friday for fasting',
+ bAr:'سنّة حمايةٍ ليوم العيد الأسبوعي: لا يُفرد بصومٍ إلا بيومٍ قبله أو بعده.',
+ bEn:'A protective sunnah for the weekly festival: Friday is not fasted alone.',
+ hAr:'قال رسول الله ﷺ: «لَا يَصُومَنَّ أَحَدُكُمْ يَوْمَ الجُمُعَةِ، إِلَّا يَوْمًا قَبْلَهُ أَوْ بَعْدَهُ».',
+ hEn:'The Messenger of Allah ﷺ said: "None of you should fast on Friday, unless (he fasts) a day before it or after it."',
+ nAr:'أبو هريرة رضي الله عنه',nEn:'Abu Hurayrah (may Allah be pleased with him)',
+ src:'Sahih al-Bukhari 1985 · Sahih Muslim 1144',srcAr:'صحيح البخاري ١٩٨٥ · صحيح مسلم ١١٤٤',grade:'muttafaq'},
 
-/* ---- level 6 ---- */
-/* Decimal arithmetic is computed in tenths as integers, then divided,
-   so results land on exact values rather than 0.30000000000000004. */
-function gDecimalOps() {
-  const t = ri(0, 2);
-  if (t === 0) { const a = ri(1, 95), b = ri(1, 95);
-    return { prompt:`${fmt(a / 10)} + ${fmt(b / 10)} =`, answer:round((a + b) / 10) }; }
-  if (t === 1) { const a = ri(2, 99), b = ri(1, a - 1);
-    return { prompt:`${fmt(a / 10)} − ${fmt(b / 10)} =`, answer:round((a - b) / 10) }; }
-  const a = ri(2, 50), b = ri(2, 9);
-  return { prompt:`${fmt(a / 10)} × ${b} =`, answer:round(a * b / 10) };
-}
-function gBrackets() {
-  const a = ri(2, 12), b = ri(2, 12), c = ri(2, 9);
-  return pick([
-    () => ({ prompt:`(${a} + ${b}) × ${c} =`, answer:(a + b) * c }),
-    () => ({ prompt:`${c} × (${a} + ${b}) =`, answer:c * (a + b) }),
-    () => ({ prompt:`(${a + b} − ${b}) × ${c} =`, answer:a * c }),
-    () => ({ prompt:`(${a} × ${c}) + ${b} =`, answer:a * c + b }),
-    () => ({ prompt:`${(a + b) * c} ÷ (${a} + ${b}) =`, answer:c }),
-  ])();
-}
-function gPercent() {
-  // Base is a multiple of 20 so every listed percentage yields an integer.
-  const p = pick([5, 10, 20, 25, 50, 75]), base = ri(1, 12) * 20;
-  return { prompt:`${p}% of ${base} =`, answer:base * p / 100 };
-}
-function gMetricConv() {
-  const n = ri(11, 995);
-  return pick([
-    () => ({ prompt:`${n} mm = ☐ cm`, answer:round(n / 10) }),
-    () => ({ prompt:`${n} cm = ☐ m`,  answer:round(n / 100) }),
-    () => ({ prompt:`${fmt(n / 10)} cm = ☐ mm`, answer:n }),
-    () => ({ prompt:`${fmt(n / 100)} m = ☐ cm`, answer:n }),
-  ])();
-}
-function g24Hour() {
-  // Afternoon/evening only, so the answer is always 4 digits with no leading zero.
-  const h = ri(1, 11), m = pick([0, 5, 10, 15, 20, 25, 30, 35, 40, 45, 50, 55]);
-  return { prompt:`${h}:${p2(m)} pm in 24-hour time =`, answer:(h + 12) * 100 + m };
-}
-function gTimetable() {
-  const startH = ri(6, 19), startM = ri(0, 11) * 5, mins = ri(4, 30) * 5;
-  const total = startH * 60 + startM + mins;
-  const endH = Math.floor(total / 60) % 24, endM = total % 60;
-  return {
-    prompt:`${p2(startH)}:${p2(startM)} → ${p2(endH)}:${p2(endM)} = ☐ minutes`,
-    answer:mins,
-  };
-}
-const FRACTIONS = [
-  ["1/2", .5], ["1/4", .25], ["3/4", .75], ["1/5", .2], ["2/5", .4],
-  ["3/5", .6], ["4/5", .8], ["1/10", .1], ["3/10", .3], ["7/10", .7],
-  ["9/10", .9], ["1/8", .125], ["1/100", .01], ["1/20", .05],
+/* ---------- DAY: with every prayer ---------- */
+{level:'day',anchor:'withPrayer',icon:'🕌',
+ tAr:'إجابة المؤذّن ودعاء الوسيلة',tEn:'Answering the muʾadhdhin & the Wasilah duʿa',
+ bAr:'ترديدٌ، ثم صلاةٌ على النبي ﷺ، ثم سؤالُ الوسيلة له.',
+ bEn:'Repeat the words, send salawat upon him ﷺ, then ask Allah to grant him al-Wasilah.',
+ hAr:'قال رسول الله ﷺ: «إِذَا سَمِعْتُمُ المُؤَذِّنَ فَقُولُوا مِثْلَ مَا يَقُولُ، ثُمَّ صَلُّوا عَلَيَّ... ثُمَّ سَلُوا اللهَ لِيَ الوَسِيلَةَ». وقال ﷺ: «مَنْ قَالَ حِينَ يَسْمَعُ النِّدَاءَ: اللَّهُمَّ رَبَّ هَذِهِ الدَّعْوَةِ التَّامَّةِ وَالصَّلَاةِ القَائِمَةِ، آتِ مُحَمَّدًا الوَسِيلَةَ وَالفَضِيلَةَ، وَابْعَثْهُ مَقَامًا مَحْمُودًا الَّذِي وَعَدْتَهُ؛ حَلَّتْ لَهُ شَفَاعَتِي يَوْمَ القِيَامَةِ».',
+ hEn:'The Messenger of Allah ﷺ said: "When you hear the muʾadhdhin, say as he says, then send blessings upon me... then ask Allah to grant me al-Wasilah." And he ﷺ said: "Whoever says upon hearing the call: O Allah, Lord of this perfect call and the established prayer, grant Muhammad al-Wasilah and eminence, and raise him to the praised station You promised him; my intercession will be his on the Day of Resurrection."',
+ nAr:'عبد الله بن عمرو وجابر رضي الله عنهم',nEn:'ʿAbdullah ibn ʿAmr & Jabir (may Allah be pleased with them)',
+ src:'Sahih Muslim 384 · Sahih al-Bukhari 614',srcAr:'صحيح مسلم ٣٨٤ · صحيح البخاري ٦١٤',grade:'sahih'},
+{level:'day',anchor:'withPrayer',icon:'⏱',
+ tAr:'الدعاء بين الأذان والإقامة',tEn:'Duʿa between the adhan and iqamah',
+ bAr:'موطنُ إجابةٍ لا يُرَدُّ فيه الدعاء.',
+ bEn:'A window in which supplication is not turned away.',
+ hAr:'قال رسول الله ﷺ: «الدُّعَاءُ لَا يُرَدُّ بَيْنَ الأَذَانِ وَالإِقَامَةِ».',
+ hEn:'The Messenger of Allah ﷺ said: "Supplication between the adhan and the iqamah is not rejected."',
+ nAr:'أنس بن مالك رضي الله عنه',nEn:'Anas ibn Malik (may Allah be pleased with him)',
+ src:'Abu Dawud 521 · al-Tirmidhi 212 — graded Sahih by al-Albani',srcAr:'أبو داود ٥٢١ · الترمذي ٢١٢ — صححه الألباني',grade:'sahih_albani'},
+{level:'day',anchor:'withPrayer',icon:'💧',
+ tAr:'دعاء ما بعد الوضوء',tEn:'The duʿa after wudu',
+ bAr:'تُفتح له أبواب الجنة الثمانية يدخل من أيّها شاء.',
+ bEn:'The eight gates of Paradise are opened for him to enter by whichever he wills.',
+ hAr:'قال رسول الله ﷺ: «مَا مِنْكُمْ مِنْ أَحَدٍ يَتَوَضَّأُ فَيُسْبِغُ الوُضُوءَ، ثُمَّ يَقُولُ: أَشْهَدُ أَنْ لَا إِلَهَ إِلَّا اللهُ وَأَنَّ مُحَمَّدًا عَبْدُ اللهِ وَرَسُولُهُ، إِلَّا فُتِحَتْ لَهُ أَبْوَابُ الجَنَّةِ الثَّمَانِيَةُ يَدْخُلُ مِنْ أَيِّهَا شَاءَ».',
+ hEn:'The Messenger of Allah ﷺ said: "There is none of you who performs wudu, completing it well, then says: I bear witness that there is no god but Allah and that Muhammad is the servant of Allah and His Messenger, except that the eight gates of Paradise are opened for him, to enter by whichever he wills."',
+ nAr:'عمر بن الخطاب رضي الله عنه',nEn:'ʿUmar ibn al-Khattab (may Allah be pleased with him)',
+ src:'Sahih Muslim 234',srcAr:'صحيح مسلم ٢٣٤',grade:'sahih'},
+{level:'day',anchor:'withPrayer',icon:'👞',
+ tAr:'ركعتان بعد كل وضوء',tEn:'Two rakʿahs after every wudu',
+ bAr:'أرجى عمل بلالٍ الذي سمع النبي ﷺ دفَّ نعليه في الجنة.',
+ bEn:'The most hopeful deed of Bilal, whose footsteps the Prophet ﷺ heard in Paradise.',
+ hAr:'قال النبي ﷺ لبلال: «يَا بِلَالُ، حَدِّثْنِي بِأَرْجَى عَمَلٍ عَمِلْتَهُ فِي الإِسْلَامِ، فَإِنِّي سَمِعْتُ دَفَّ نَعْلَيْكَ بَيْنَ يَدَيَّ فِي الجَنَّةِ». قَالَ: مَا عَمِلْتُ عَمَلًا أَرْجَى عِنْدِي أَنِّي لَمْ أَتَطَهَّرْ طَهُورًا فِي سَاعَةِ لَيْلٍ أَوْ نَهَارٍ إِلَّا صَلَّيْتُ بِذَلِكَ الطُّهُورِ مَا كُتِبَ لِي أَنْ أُصَلِّيَ.',
+ hEn:'The Prophet ﷺ said to Bilal: "O Bilal, tell me of the most hopeful deed you have done in Islam, for I heard the sound of your sandals ahead of me in Paradise." He said: I have done nothing more hopeful to me than that I never purified myself at any hour of night or day except that I prayed with that purification what was written for me to pray.',
+ nAr:'أبو هريرة رضي الله عنه',nEn:'Abu Hurayrah (may Allah be pleased with him)',
+ src:'Sahih al-Bukhari 1149 · Sahih Muslim 2458',srcAr:'صحيح البخاري ١١٤٩ · صحيح مسلم ٢٤٥٨',grade:'muttafaq'},
+{level:'day',anchor:'withPrayer',icon:'🚶',
+ tAr:'كثرة الخُطا وانتظار الصلاة',tEn:'Many steps to the mosque & awaiting prayer',
+ bAr:'ممحاةُ الخطايا ورافعةُ الدرجات: فذلكم الرباط.',
+ bEn:'The eraser of sins and raiser of ranks: that is the ribat.',
+ hAr:'قال رسول الله ﷺ: «أَلَا أَدُلُّكُمْ عَلَى مَا يَمْحُو اللهُ بِهِ الخَطَايَا وَيَرْفَعُ بِهِ الدَّرَجَاتِ؟ إِسْبَاغُ الوُضُوءِ عَلَى المَكَارِهِ، وَكَثْرَةُ الخُطَا إِلَى المَسَاجِدِ، وَانْتِظَارُ الصَّلَاةِ بَعْدَ الصَّلَاةِ، فَذَلِكُمُ الرِّبَاطُ».',
+ hEn:'The Messenger of Allah ﷺ said: "Shall I not direct you to that by which Allah erases sins and raises ranks? Performing wudu thoroughly despite difficulty, taking many steps to the mosques, and waiting for prayer after prayer: that is the ribat."',
+ nAr:'أبو هريرة رضي الله عنه',nEn:'Abu Hurayrah (may Allah be pleased with him)',
+ src:'Sahih Muslim 251',srcAr:'صحيح مسلم ٢٥١',grade:'sahih'},
+{level:'day',anchor:'withPrayer',icon:'🚪',
+ tAr:'دعاء دخول المسجد والخروج منه',tEn:'Entering and leaving the mosque',
+ bAr:'«اللهم افتح لي أبواب رحمتك» دخولًا، و«من فضلك» خروجًا.',
+ bEn:'"Open for me the gates of Your mercy" entering, and "of Your bounty" leaving.',
+ hAr:'قال رسول الله ﷺ: «إِذَا دَخَلَ أَحَدُكُمُ المَسْجِدَ فَلْيَقُلْ: اللَّهُمَّ افْتَحْ لِي أَبْوَابَ رَحْمَتِكَ، وَإِذَا خَرَجَ فَلْيَقُلْ: اللَّهُمَّ إِنِّي أَسْأَلُكَ مِنْ فَضْلِكَ».',
+ hEn:'The Messenger of Allah ﷺ said: "When one of you enters the mosque, let him say: O Allah, open for me the gates of Your mercy; and when he leaves, let him say: O Allah, I ask You of Your bounty."',
+ nAr:'أبو حميد أو أبو أسيد رضي الله عنهما',nEn:'Abu Humayd or Abu Usayd (may Allah be pleased with them)',
+ src:'Sahih Muslim 713',srcAr:'صحيح مسلم ٧١٣',grade:'sahih'},
+{level:'day',anchor:'withPrayer',icon:'📿',
+ tAr:'التسبيح دُبُر كل صلاة',tEn:'Tasbih after every prayer',
+ bAr:'٣٣ تسبيحة و٣٣ تحميدة و٣٣ تكبيرة وتمام المائة بالتهليل: غفرانٌ ولو كانت مثل زبد البحر.',
+ bEn:'33 tasbih, 33 tahmid, 33 takbir, completing 100 with tahlil: forgiveness even like the foam of the sea.',
+ hAr:'قال رسول الله ﷺ: «مَنْ سَبَّحَ اللهَ فِي دُبُرِ كُلِّ صَلَاةٍ ثَلَاثًا وَثَلَاثِينَ، وَحَمِدَ اللهَ ثَلَاثًا وَثَلَاثِينَ، وَكَبَّرَ اللهَ ثَلَاثًا وَثَلَاثِينَ، فَتِلْكَ تِسْعَةٌ وَتِسْعُونَ، وَقَالَ تَمَامَ المِائَةِ: لَا إِلَهَ إِلَّا اللهُ وَحْدَهُ لَا شَرِيكَ لَهُ، لَهُ المُلْكُ وَلَهُ الحَمْدُ وَهُوَ عَلَى كُلِّ شَيْءٍ قَدِيرٌ؛ غُفِرَتْ خَطَايَاهُ وَإِنْ كَانَتْ مِثْلَ زَبَدِ البَحْرِ».',
+ hEn:'The Messenger of Allah ﷺ said: "Whoever glorifies Allah 33 times after every prayer, praises Allah 33 times, and magnifies Allah 33 times, that is ninety-nine; and completes the hundred with: There is no god but Allah alone without partner, His is the dominion and His is the praise, and He is over all things able; his sins are forgiven even if they were like the foam of the sea."',
+ nAr:'أبو هريرة رضي الله عنه',nEn:'Abu Hurayrah (may Allah be pleased with him)',
+ src:'Sahih Muslim 597',srcAr:'صحيح مسلم ٥٩٧',grade:'sahih'},
+{level:'day',anchor:'withPrayer',icon:'🛡',q:true,
+ tAr:'آية الكرسي دُبُر كل صلاة',tEn:'Ayat al-Kursi after every prayer',
+ bAr:'لم يمنعه من دخول الجنة إلا أن يموت.',
+ bEn:'Nothing stands between him and Paradise except death.',
+ hAr:'قال رسول الله ﷺ: «مَنْ قَرَأَ آيَةَ الكُرْسِيِّ دُبُرَ كُلِّ صَلَاةٍ مَكْتُوبَةٍ لَمْ يَمْنَعْهُ مِنْ دُخُولِ الجَنَّةِ إِلَّا أَنْ يَمُوتَ».',
+ hEn:'The Messenger of Allah ﷺ said: "Whoever recites Ayat al-Kursi after every obligatory prayer, nothing prevents him from entering Paradise except death."',
+ nAr:'أبو أمامة الباهلي رضي الله عنه',nEn:'Abu Umamah al-Bahili (may Allah be pleased with him)',
+ src:'al-Nasaʾi (al-Kubra 9928) — graded Sahih by al-Albani (al-Silsilah 972)',srcAr:'النسائي (الكبرى ٩٩٢٨) — صححه الألباني (الصحيحة ٩٧٢)',grade:'sahih_albani'},
+{level:'day',anchor:'withPrayer',icon:'🕮',q:true,
+ tAr:'المعوِّذات دُبُر كل صلاة',tEn:'The Muʿawwidhat after every prayer',
+ bAr:'أوصى بها النبي ﷺ عقبة بن عامر عقب كل صلاة.',
+ bEn:'The Prophet ﷺ instructed ʿUqbah ibn ʿAmir to recite them after every prayer.',
+ hAr:'قال عقبة بن عامر رضي الله عنه: «أَمَرَنِي رَسُولُ اللهِ ﷺ أَنْ أَقْرَأَ بِالمُعَوِّذَاتِ دُبُرَ كُلِّ صَلَاةٍ».',
+ hEn:'ʿUqbah ibn ʿAmir said: "The Messenger of Allah ﷺ commanded me to recite the Muʿawwidhat after every prayer."',
+ nAr:'عقبة بن عامر رضي الله عنه',nEn:'ʿUqbah ibn ʿAmir (may Allah be pleased with him)',
+ src:'Abu Dawud 1523 — graded Sahih by al-Albani',srcAr:'أبو داود ١٥٢٣ — صححه الألباني',grade:'sahih_albani'},
+{level:'day',anchor:'withPrayer',icon:'🤲',
+ tAr:'اللهم أعنّي على ذكرك وشكرك',tEn:'"O Allah, help me remember You"',
+ bAr:'وصية النبي ﷺ لمعاذٍ مقرونةً بقوله: والله إني لأحبك.',
+ bEn:'His ﷺ counsel to Muʿadh, joined to the words: By Allah, I love you.',
+ hAr:'قال رسول الله ﷺ لمعاذ: «يَا مُعَاذُ، وَاللهِ إِنِّي لَأُحِبُّكَ... أُوصِيكَ يَا مُعَاذُ لَا تَدَعَنَّ فِي دُبُرِ كُلِّ صَلَاةٍ تَقُولُ: اللَّهُمَّ أَعِنِّي عَلَى ذِكْرِكَ وَشُكْرِكَ وَحُسْنِ عِبَادَتِكَ».',
+ hEn:'The Messenger of Allah ﷺ said to Muʿadh: "O Muʿadh, by Allah I love you... I advise you, O Muʿadh: never leave saying after every prayer: O Allah, help me to remember You, to thank You, and to worship You well."',
+ nAr:'معاذ بن جبل رضي الله عنه',nEn:'Muʿadh ibn Jabal (may Allah be pleased with him)',
+ src:'Abu Dawud 1522 — graded Sahih by al-Albani',srcAr:'أبو داود ١٥٢٢ — صححه الألباني',grade:'sahih_albani'},
+
+/* ---------- DAY (other additions) ---------- */
+{level:'day',anchor:'wake',icon:'🚻',
+ tAr:'دعاء دخول الخلاء',tEn:'Entering the washroom',
+ bAr:'«اللهم إني أعوذ بك من الخُبث والخبائث».',
+ bEn:'"O Allah, I seek refuge in You from the male and female devils."',
+ hAr:'كان النبي ﷺ إذا دخل الخلاء قال: «اللَّهُمَّ إِنِّي أَعُوذُ بِكَ مِنَ الخُبُثِ وَالخَبَائِثِ».',
+ hEn:'When the Prophet ﷺ entered the washroom he would say: "O Allah, I seek refuge in You from the wicked male and female devils."',
+ nAr:'أنس بن مالك رضي الله عنه',nEn:'Anas ibn Malik (may Allah be pleased with him)',
+ src:'Sahih al-Bukhari 142 · Sahih Muslim 375',srcAr:'صحيح البخاري ١٤٢ · صحيح مسلم ٣٧٥',grade:'muttafaq'},
+{level:'day',anchor:'fajr',icon:'🕮',q:true,
+ tAr:'قراءة سنّتي الفجر والمغرب',tEn:'Recitation in the Fajr & Maghrib sunnahs',
+ bAr:'الكافرون في الأولى والإخلاص في الثانية: رآه ابن عمر عشرين مرة.',
+ bEn:'Al-Kafirun in the first and al-Ikhlas in the second; Ibn ʿUmar watched him do it twenty times.',
+ hAr:'قرأ النبي ﷺ في ركعتي الفجر: «قُلْ يَا أَيُّهَا الكَافِرُونَ» و«قُلْ هُوَ اللهُ أَحَدٌ». وقال ابن عمر: رَمَقْتُ النَّبِيَّ ﷺ عِشْرِينَ مَرَّةً يَقْرَأُ فِي الرَّكْعَتَيْنِ بَعْدَ المَغْرِبِ وَفِي الرَّكْعَتَيْنِ قَبْلَ الفَجْرِ بِهِمَا.',
+ hEn:'The Prophet ﷺ recited in the two rakʿahs of Fajr: "Say, O disbelievers" and "Say, He is Allah, One." And Ibn ʿUmar said: I watched the Prophet ﷺ twenty times reciting them in the two rakʿahs after Maghrib and the two before Fajr.',
+ nAr:'أبو هريرة وابن عمر رضي الله عنهم',nEn:'Abu Hurayrah & Ibn ʿUmar (may Allah be pleased with them)',
+ src:'Sahih Muslim 726 · al-Nasaʾi 992 (Sahih, al-Albani: al-Silsilah 3328)',srcAr:'صحيح مسلم ٧٢٦ · النسائي ٩٩٢ (صححه الألباني: الصحيحة ٣٣٢٨)',grade:'sahih'},
+{level:'day',anchor:'fajr',icon:'🕮',q:true,
+ tAr:'المعوِّذات ثلاثًا صباحًا ومساءً',tEn:'The three Quls, thrice, morning and evening',
+ bAr:'الإخلاص والفلق والناس ثلاث مرات: تكفيك من كل شيء.',
+ bEn:'Al-Ikhlas, al-Falaq and al-Nas three times: they suffice you against everything.',
+ hAr:'قال رسول الله ﷺ: «قُلْ هُوَ اللهُ أَحَدٌ وَالمُعَوِّذَتَيْنِ حِينَ تُمْسِي وَحِينَ تُصْبِحُ، ثَلَاثَ مَرَّاتٍ، تَكْفِيكَ مِنْ كُلِّ شَيْءٍ».',
+ hEn:'The Messenger of Allah ﷺ said: "Say: He is Allah, One, and the two surahs of refuge, when you reach evening and when you reach morning, three times: they will suffice you against everything."',
+ nAr:'عبد الله بن خبيب رضي الله عنه',nEn:'ʿAbdullah ibn Khubayb (may Allah be pleased with him)',
+ src:'Abu Dawud 5082 · al-Tirmidhi 3575 — graded Sahih by al-Albani',srcAr:'أبو داود ٥٠٨٢ · الترمذي ٣٥٧٥ — صححه الألباني',grade:'sahih_albani'},
+{level:'day',anchor:'dhuhr',icon:'🥛',
+ tAr:'التنفّس في الشراب ثلاثًا',tEn:'Drinking in three breaths',
+ bAr:'كان ﷺ يتنفّس في الشراب ثلاثًا خارج الإناء.',
+ bEn:'He ﷺ would pause for breath three times while drinking, outside the vessel.',
+ hAr:'قال أنس رضي الله عنه: «كَانَ رَسُولُ اللهِ ﷺ يَتَنَفَّسُ فِي الشَّرَابِ ثَلَاثًا»، ويقول: «إِنَّهُ أَرْوَى وَأَبْرَأُ وَأَمْرَأُ».',
+ hEn:'Anas said: "The Messenger of Allah ﷺ used to breathe three times in the course of a drink," and he would say: "It is more quenching, healthier, and more wholesome."',
+ nAr:'أنس بن مالك رضي الله عنه',nEn:'Anas ibn Malik (may Allah be pleased with him)',
+ src:'Sahih Muslim 2028',srcAr:'صحيح مسلم ٢٠٢٨',grade:'sahih'},
+{level:'day',anchor:'dhuhr',icon:'🙏',
+ tAr:'الحمد بعد الطعام والشراب',tEn:'Praising Allah after eating and drinking',
+ bAr:'إن الله ليرضى عن العبد يأكل الأكلة فيحمده عليها.',
+ bEn:'Allah is pleased with the servant who eats a meal and praises Him for it.',
+ hAr:'قال رسول الله ﷺ: «إِنَّ اللهَ لَيَرْضَى عَنِ العَبْدِ أَنْ يَأْكُلَ الأَكْلَةَ فَيَحْمَدَهُ عَلَيْهَا، أَوْ يَشْرَبَ الشَّرْبَةَ فَيَحْمَدَهُ عَلَيْهَا».',
+ hEn:'The Messenger of Allah ﷺ said: "Indeed Allah is pleased with the servant who eats a meal and praises Him for it, or drinks a drink and praises Him for it."',
+ nAr:'أنس بن مالك رضي الله عنه',nEn:'Anas ibn Malik (may Allah be pleased with him)',
+ src:'Sahih Muslim 2734',srcAr:'صحيح مسلم ٢٧٣٤',grade:'sahih'},
+{level:'day',anchor:'asr',icon:'💯',
+ tAr:'التهليل مائة مرة',tEn:'The tahlil one hundred times',
+ bAr:'عدل عشر رقاب، ومائة حسنة، وحرزٌ من الشيطان يومه حتى يمسي.',
+ bEn:'Equal to freeing ten slaves, a hundred good deeds, and a shield from shaytan all day.',
+ hAr:'قال رسول الله ﷺ: «مَنْ قَالَ: لَا إِلَهَ إِلَّا اللهُ وَحْدَهُ لَا شَرِيكَ لَهُ، لَهُ المُلْكُ وَلَهُ الحَمْدُ وَهُوَ عَلَى كُلِّ شَيْءٍ قَدِيرٌ، فِي يَوْمٍ مِائَةَ مَرَّةٍ؛ كَانَتْ لَهُ عَدْلَ عَشْرِ رِقَابٍ، وَكُتِبَتْ لَهُ مِائَةُ حَسَنَةٍ، وَمُحِيَتْ عَنْهُ مِائَةُ سَيِّئَةٍ، وَكَانَتْ لَهُ حِرْزًا مِنَ الشَّيْطَانِ يَوْمَهُ ذَلِكَ حَتَّى يُمْسِيَ».',
+ hEn:'The Messenger of Allah ﷺ said: "Whoever says: There is no god but Allah alone without partner, His is the dominion and His is the praise, and He is over all things able, one hundred times in a day: it is equal to freeing ten slaves, a hundred good deeds are recorded for him, a hundred misdeeds erased, and it is a shield for him from shaytan that day until evening."',
+ nAr:'أبو هريرة رضي الله عنه',nEn:'Abu Hurayrah (may Allah be pleased with him)',
+ src:'Sahih al-Bukhari 3293 · Sahih Muslim 2691',srcAr:'صحيح البخاري ٣٢٩٣ · صحيح مسلم ٢٦٩١',grade:'muttafaq'},
+{level:'day',anchor:'asr',icon:'🔄',
+ tAr:'الاستغفار مائة مرة',tEn:'Istighfar one hundred times',
+ bAr:'كان ﷺ يستغفر الله في اليوم مائة مرة.',
+ bEn:'He ﷺ would seek Allah\u2019s forgiveness a hundred times a day.',
+ hAr:'قال رسول الله ﷺ: «إِنَّهُ لَيُغَانُ عَلَى قَلْبِي، وَإِنِّي لَأَسْتَغْفِرُ اللهَ فِي اليَوْمِ مِائَةَ مَرَّةٍ». وقال: «وَاللهِ إِنِّي لَأَسْتَغْفِرُ اللهَ وَأَتُوبُ إِلَيْهِ فِي اليَوْمِ أَكْثَرَ مِنْ سَبْعِينَ مَرَّةً».',
+ hEn:'The Messenger of Allah ﷺ said: "Indeed my heart is (sometimes) veiled, and I seek Allah\u2019s forgiveness a hundred times a day." And he said: "By Allah, I seek forgiveness from Allah and turn to Him more than seventy times a day."',
+ nAr:'الأغرّ المزني وأبو هريرة رضي الله عنهما',nEn:'al-Agharr al-Muzani & Abu Hurayrah (may Allah be pleased with them)',
+ src:'Sahih Muslim 2702 · Sahih al-Bukhari 6307',srcAr:'صحيح مسلم ٢٧٠٢ · صحيح البخاري ٦٣٠٧',grade:'sahih'},
+{level:'day',anchor:'maghrib',icon:'🏡',
+ tAr:'ذكر الله عند دخول البيت والطعام',tEn:'Remembering Allah entering the home & at food',
+ bAr:'يقول الشيطان لأتباعه حينها: لا مبيت لكم ولا عشاء.',
+ bEn:'Shaytan then tells his followers: no lodging for you here, and no dinner.',
+ hAr:'قال رسول الله ﷺ: «إِذَا دَخَلَ الرَّجُلُ بَيْتَهُ فَذَكَرَ اللهَ عِنْدَ دُخُولِهِ وَعِنْدَ طَعَامِهِ، قَالَ الشَّيْطَانُ: لَا مَبِيتَ لَكُمْ وَلَا عَشَاءَ، وَإِذَا دَخَلَ فَلَمْ يَذْكُرِ اللهَ عِنْدَ دُخُولِهِ قَالَ الشَّيْطَانُ: أَدْرَكْتُمُ المَبِيتَ...».',
+ hEn:'The Messenger of Allah ﷺ said: "When a man enters his home and remembers Allah upon entering and at his food, shaytan says (to his troops): No lodging for you and no dinner. And when he enters without remembering Allah, shaytan says: You have found lodging..."',
+ nAr:'جابر بن عبد الله رضي الله عنهما',nEn:'Jabir ibn ʿAbdillah (may Allah be pleased with them)',
+ src:'Sahih Muslim 2018',srcAr:'صحيح مسلم ٢٠١٨',grade:'sahih'},
+{level:'day',anchor:'maghrib',icon:'🕮',q:true,
+ tAr:'سورة البقرة في البيت',tEn:'Surat al-Baqarah in the home',
+ bAr:'إن الشيطان ينفر من البيت الذي تُقرأ فيه سورة البقرة.',
+ bEn:'Shaytan flees from the house in which Surat al-Baqarah is recited.',
+ hAr:'قال رسول الله ﷺ: «لَا تَجْعَلُوا بُيُوتَكُمْ مَقَابِرَ، إِنَّ الشَّيْطَانَ يَنْفِرُ مِنَ البَيْتِ الَّذِي تُقْرَأُ فِيهِ سُورَةُ البَقَرَةِ».',
+ hEn:'The Messenger of Allah ﷺ said: "Do not turn your houses into graves. Indeed shaytan flees from the house in which Surat al-Baqarah is recited."',
+ nAr:'أبو هريرة رضي الله عنه',nEn:'Abu Hurayrah (may Allah be pleased with him)',
+ src:'Sahih Muslim 780',srcAr:'صحيح مسلم ٧٨٠',grade:'sahih'},
+{level:'day',anchor:'night',icon:'🕮',q:true,
+ tAr:'قراءة الوتر: الأعلى والكافرون والإخلاص',tEn:'Witr recitation: al-Aʿla, al-Kafirun, al-Ikhlas',
+ bAr:'سورةٌ لكل ركعةٍ من ثلاث الوتر.',
+ bEn:'One surah for each of the three rakʿahs of Witr.',
+ hAr:'كان رسول الله ﷺ يوتر فيقرأ بـ«سَبِّحِ اسْمَ رَبِّكَ الأَعْلَى» و«قُلْ يَا أَيُّهَا الكَافِرُونَ» و«قُلْ هُوَ اللهُ أَحَدٌ».',
+ hEn:'The Messenger of Allah ﷺ would pray Witr reciting "Glorify the Name of your Lord, the Most High," "Say: O disbelievers," and "Say: He is Allah, One."',
+ nAr:'عبد الله بن عباس وأُبيّ بن كعب رضي الله عنهم',nEn:'Ibn ʿAbbas & Ubayy ibn Kaʿb (may Allah be pleased with them)',
+ src:'al-Nasaʾi 1729 · Ibn Majah 1171 — graded Sahih by al-Albani',srcAr:'النسائي ١٧٢٩ · ابن ماجه ١١٧١ — صححه الألباني',grade:'sahih_albani'},
+{level:'day',anchor:'night',icon:'🌃',
+ tAr:'دعاء الثلث الأخير من الليل',tEn:'The duʿa of the last third of the night',
+ bAr:'ينزل ربنا كل ليلة فيقول: من يدعوني فأستجيب له؟',
+ bEn:'Our Lord descends every night saying: Who calls on Me, that I may answer him?',
+ hAr:'قال رسول الله ﷺ: «يَنْزِلُ رَبُّنَا تَبَارَكَ وَتَعَالَى كُلَّ لَيْلَةٍ إِلَى السَّمَاءِ الدُّنْيَا حِينَ يَبْقَى ثُلُثُ اللَّيْلِ الآخِرُ، يَقُولُ: مَنْ يَدْعُونِي فَأَسْتَجِيبَ لَهُ؟ مَنْ يَسْأَلُنِي فَأُعْطِيَهُ؟ مَنْ يَسْتَغْفِرُنِي فَأَغْفِرَ لَهُ؟».',
+ hEn:'The Messenger of Allah ﷺ said: "Our Lord, Blessed and Exalted, descends every night to the lowest heaven when the last third of the night remains, saying: Who calls upon Me, that I may answer him? Who asks of Me, that I may give him? Who seeks My forgiveness, that I may forgive him?"',
+ nAr:'أبو هريرة رضي الله عنه',nEn:'Abu Hurayrah (may Allah be pleased with him)',
+ src:'Sahih al-Bukhari 1145 · Sahih Muslim 758',srcAr:'صحيح البخاري ١١٤٥ · صحيح مسلم ٧٥٨',grade:'muttafaq'},
+{level:'day',anchor:'sleep',icon:'🕮',q:true,
+ tAr:'المعوِّذات في الكفّين قبل النوم',tEn:'The three Quls into cupped hands before sleep',
+ bAr:'جمعُ الكفّين والنفث فيهما بالإخلاص والمعوِّذتين ومسحُ الجسد، ثلاثًا.',
+ bEn:'Cupping the hands, blowing into them with the three Quls, and wiping the body, three times.',
+ hAr:'قالت عائشة رضي الله عنها: «كَانَ النَّبِيُّ ﷺ إِذَا أَوَى إِلَى فِرَاشِهِ كُلَّ لَيْلَةٍ جَمَعَ كَفَّيْهِ ثُمَّ نَفَثَ فِيهِمَا، فَقَرَأَ فِيهِمَا: قُلْ هُوَ اللهُ أَحَدٌ، وَقُلْ أَعُوذُ بِرَبِّ الفَلَقِ، وَقُلْ أَعُوذُ بِرَبِّ النَّاسِ، ثُمَّ يَمْسَحُ بِهِمَا مَا اسْتَطَاعَ مِنْ جَسَدِهِ، يَبْدَأُ بِهِمَا عَلَى رَأْسِهِ وَوَجْهِهِ وَمَا أَقْبَلَ مِنْ جَسَدِهِ، يَفْعَلُ ذَلِكَ ثَلَاثَ مَرَّاتٍ».',
+ hEn:'ʿAʾishah said: "Every night when the Prophet ﷺ went to his bed, he would cup his hands together, blow into them, recite into them: Say, He is Allah, One; Say, I seek refuge with the Lord of the daybreak; and Say, I seek refuge with the Lord of mankind; then wipe with them whatever he could of his body, beginning with his head, his face, and the front of his body, doing that three times."',
+ nAr:'عائشة رضي الله عنها',nEn:'ʿAʾishah (may Allah be pleased with her)',
+ src:'Sahih al-Bukhari 5017',srcAr:'صحيح البخاري ٥٠١٧',grade:'sahih'},
+{level:'day',anchor:'sleep',icon:'🕮',q:true,
+ tAr:'خواتيم سورة البقرة',tEn:'The last two verses of al-Baqarah',
+ bAr:'من قرأهما في ليلةٍ كفتاه.',
+ bEn:'Whoever recites them in a night, they suffice him.',
+ hAr:'قال رسول الله ﷺ: «مَنْ قَرَأَ بِالآيَتَيْنِ مِنْ آخِرِ سُورَةِ البَقَرَةِ فِي لَيْلَةٍ كَفَتَاهُ».',
+ hEn:'The Messenger of Allah ﷺ said: "Whoever recites the last two verses of Surat al-Baqarah in a night, they will suffice him."',
+ nAr:'أبو مسعود الأنصاري رضي الله عنه',nEn:'Abu Masʿud al-Ansari (may Allah be pleased with him)',
+ src:'Sahih al-Bukhari 5009 · Sahih Muslim 808',srcAr:'صحيح البخاري ٥٠٠٩ · صحيح مسلم ٨٠٨',grade:'muttafaq'},
+{level:'day',anchor:'sleep',icon:'🧹',
+ tAr:'نفض الفراش',tEn:'Dusting the bed',
+ bAr:'فإنه لا يدري ما خلَفه عليه بعده.',
+ bEn:'For one does not know what came onto it after him.',
+ hAr:'قال رسول الله ﷺ: «إِذَا أَوَى أَحَدُكُمْ إِلَى فِرَاشِهِ فَلْيَنْفُضْ فِرَاشَهُ بِدَاخِلَةِ إِزَارِهِ، فَإِنَّهُ لَا يَدْرِي مَا خَلَفَهُ عَلَيْهِ».',
+ hEn:'The Messenger of Allah ﷺ said: "When one of you goes to his bed, let him dust off his bedding with the inside of his lower garment, for he does not know what came onto it after him."',
+ nAr:'أبو هريرة رضي الله عنه',nEn:'Abu Hurayrah (may Allah be pleased with him)',
+ src:'Sahih al-Bukhari 6320 · Sahih Muslim 2714',srcAr:'صحيح البخاري ٦٣٢٠ · صحيح مسلم ٢٧١٤',grade:'muttafaq'},
+{level:'day',anchor:'sleep',icon:'✨',
+ tAr:'تسبيح فاطمة قبل النوم',tEn:'The tasbih of Fatimah before sleep',
+ bAr:'٣٣ تسبيحة و٣٣ تحميدة و٣٤ تكبيرة: خيرٌ لكما من خادم.',
+ bEn:'33 tasbih, 33 tahmid, 34 takbir: better for you both than a servant.',
+ hAr:'قال النبي ﷺ لعليٍّ وفاطمة: «أَلَا أَدُلُّكُمَا عَلَى خَيْرٍ لَكُمَا مِنْ خَادِمٍ؟ إِذَا أَوَيْتُمَا إِلَى فِرَاشِكُمَا، أَوْ أَخَذْتُمَا مَضَاجِعَكُمَا، فَكَبِّرَا أَرْبَعًا وَثَلَاثِينَ، وَسَبِّحَا ثَلَاثًا وَثَلَاثِينَ، وَاحْمَدَا ثَلَاثًا وَثَلَاثِينَ، فَهُوَ خَيْرٌ لَكُمَا مِنْ خَادِمٍ».',
+ hEn:'The Prophet ﷺ said to ʿAli and Fatimah: "Shall I not direct you both to what is better for you than a servant? When you go to your bed, say Allahu akbar thirty-four times, subhanAllah thirty-three times, and alhamdulillah thirty-three times; that is better for you than a servant."',
+ nAr:'علي بن أبي طالب رضي الله عنه',nEn:'ʿAli ibn Abi Talib (may Allah be pleased with him)',
+ src:'Sahih al-Bukhari 3705 · Sahih Muslim 2727',srcAr:'صحيح البخاري ٣٧٠٥ · صحيح مسلم ٢٧٢٧',grade:'muttafaq'},
+{level:'day',anchor:'sleep',icon:'🕮',q:true,
+ tAr:'الكافرون: براءة من الشرك',tEn:'Al-Kafirun: freedom from shirk',
+ bAr:'اقرأها ثم نم على خاتمتها.',
+ bEn:'Recite it, then sleep upon its conclusion.',
+ hAr:'قال رسول الله ﷺ: «اقْرَأْ: قُلْ يَا أَيُّهَا الكَافِرُونَ، ثُمَّ نَمْ عَلَى خَاتِمَتِهَا، فَإِنَّهَا بَرَاءَةٌ مِنَ الشِّرْكِ».',
+ hEn:'The Messenger of Allah ﷺ said: "Recite: Say, O disbelievers, then sleep upon its conclusion, for it is a declaration of freedom from shirk."',
+ nAr:'نوفل الأشجعي رضي الله عنه',nEn:'Nawfal al-Ashjaʿi (may Allah be pleased with him)',
+ src:'Abu Dawud 5055 — graded Sahih by al-Albani',srcAr:'أبو داود ٥٠٥٥ — صححه الألباني',grade:'sahih_albani'},
+{level:'day',anchor:'sleep',icon:'🕮',q:true,
+ tAr:'السجدة والملك قبل النوم',tEn:'Al-Sajdah & al-Mulk before sleep',
+ bAr:'سورةُ ثلاثين آيةً تشفع لصاحبها حتى يُغفر له.',
+ bEn:'A surah of thirty verses that intercedes for its companion until he is forgiven.',
+ hAr:'قال جابر رضي الله عنه: «كَانَ النَّبِيُّ ﷺ لَا يَنَامُ حَتَّى يَقْرَأَ: الم تَنْزِيلُ، وَتَبَارَكَ الَّذِي بِيَدِهِ المُلْكُ». وقال ﷺ: «إِنَّ سُورَةً مِنَ القُرْآنِ ثَلَاثُونَ آيَةً شَفَعَتْ لِرَجُلٍ حَتَّى غُفِرَ لَهُ، وَهِيَ سُورَةُ تَبَارَكَ الَّذِي بِيَدِهِ المُلْكُ».',
+ hEn:'Jabir said: "The Prophet ﷺ would not sleep until he recited Alif-Lam-Mim Tanzil (al-Sajdah) and Tabarak alladhi bi yadihil-mulk (al-Mulk)." And he ﷺ said: "There is a surah in the Qurʾan of thirty verses which interceded for a man until he was forgiven; it is Tabarak alladhi bi yadihil-mulk."',
+ nAr:'جابر وأبو هريرة رضي الله عنهما',nEn:'Jabir & Abu Hurayrah (may Allah be pleased with them)',
+ src:'al-Tirmidhi 2892 · 2891 — graded Sahih by al-Albani',srcAr:'الترمذي ٢٨٩٢ · ٢٨٩١ — صححه الألباني',grade:'sahih_albani',
+ noteAr:'تنبيه: حديث المداومة قبل النوم صححه الألباني، وأعلّه ابن أبي حاتم وابن حجر؛ وحديث فضل السورة وشفاعتها حسّنه الترمذي وصححه ابن تيمية والألباني.',
+ noteEn:'Note: al-Albani graded the nightly-habit report sahih, while Ibn Abi Hatim and Ibn Hajar considered it defective; the intercession hadith itself was graded hasan by al-Tirmidhi and sahih by Ibn Taymiyyah and al-Albani.'},
+
+/* ---------- OCCASIONS ---------- */
+{level:'occ',anchor:'dua',icon:'🧭',
+ tAr:'صلاة الاستخارة',tEn:'The Istikharah prayer',
+ bAr:'علّمها النبي ﷺ أصحابه في الأمور كلها كما يعلمهم السورة من القرآن.',
+ bEn:'He ﷺ taught it for all matters as he taught a surah of the Qurʾan.',
+ hAr:'قال جابر رضي الله عنه: كَانَ رَسُولُ اللهِ ﷺ يُعَلِّمُنَا الِاسْتِخَارَةَ فِي الأُمُورِ كُلِّهَا كَمَا يُعَلِّمُنَا السُّورَةَ مِنَ القُرْآنِ، يَقُولُ: «إِذَا هَمَّ أَحَدُكُمْ بِالأَمْرِ فَلْيَرْكَعْ رَكْعَتَيْنِ مِنْ غَيْرِ الفَرِيضَةِ، ثُمَّ لِيَقُلْ: اللَّهُمَّ إِنِّي أَسْتَخِيرُكَ بِعِلْمِكَ، وَأَسْتَقْدِرُكَ بِقُدْرَتِكَ، وَأَسْأَلُكَ مِنْ فَضْلِكَ العَظِيمِ...».',
+ hEn:'Jabir said: The Messenger of Allah ﷺ used to teach us istikharah in all matters as he taught us a surah of the Qurʾan, saying: "When one of you intends a matter, let him pray two rakʿahs other than the obligatory, then say: O Allah, I seek Your guidance by Your knowledge, and Your strength by Your power, and I ask You of Your great bounty..."',
+ nAr:'جابر بن عبد الله رضي الله عنهما',nEn:'Jabir ibn ʿAbdillah (may Allah be pleased with them)',
+ src:'Sahih al-Bukhari 1162',srcAr:'صحيح البخاري ١١٦٢',grade:'sahih'},
+{level:'occ',anchor:'dua',icon:'⚓',
+ tAr:'دعاء الكرب',tEn:'The duʿa of distress',
+ bAr:'كلماتُ النبي ﷺ عند الشدائد.',
+ bEn:'The Prophet\u2019s ﷺ words at moments of hardship.',
+ hAr:'كان النبي ﷺ يقول عند الكرب: «لَا إِلَهَ إِلَّا اللهُ العَظِيمُ الحَلِيمُ، لَا إِلَهَ إِلَّا اللهُ رَبُّ العَرْشِ العَظِيمِ، لَا إِلَهَ إِلَّا اللهُ رَبُّ السَّمَوَاتِ وَرَبُّ الأَرْضِ وَرَبُّ العَرْشِ الكَرِيمِ».',
+ hEn:'At times of distress the Prophet ﷺ would say: "There is no god but Allah, the Magnificent, the Forbearing; there is no god but Allah, Lord of the Magnificent Throne; there is no god but Allah, Lord of the heavens, Lord of the earth, and Lord of the Noble Throne."',
+ nAr:'عبد الله بن عباس رضي الله عنهما',nEn:'ʿAbdullah ibn ʿAbbas (may Allah be pleased with them both)',
+ src:'Sahih al-Bukhari 6346 · Sahih Muslim 2730',srcAr:'صحيح البخاري ٦٣٤٦ · صحيح مسلم ٢٧٣٠',grade:'muttafaq'},
+{level:'occ',anchor:'dua',icon:'🪶',
+ tAr:'كفّارة المجلس',tEn:'The expiation of the gathering',
+ bAr:'خاتمةٌ تغفر لغطَ المجلس كله.',
+ bEn:'A closing that forgives all the idle talk of the gathering.',
+ hAr:'قال رسول الله ﷺ: «مَنْ جَلَسَ فِي مَجْلِسٍ فَكَثُرَ فِيهِ لَغَطُهُ، فَقَالَ قَبْلَ أَنْ يَقُومَ مِنْ مَجْلِسِهِ ذَلِكَ: سُبْحَانَكَ اللَّهُمَّ وَبِحَمْدِكَ، أَشْهَدُ أَنْ لَا إِلَهَ إِلَّا أَنْتَ، أَسْتَغْفِرُكَ وَأَتُوبُ إِلَيْكَ؛ إِلَّا غُفِرَ لَهُ مَا كَانَ فِي مَجْلِسِهِ ذَلِكَ».',
+ hEn:'The Messenger of Allah ﷺ said: "Whoever sits in a gathering in which there is much idle talk, and says before rising: Glory and praise be to You, O Allah; I bear witness that there is no god but You; I seek Your forgiveness and turn to You — except that he is forgiven what took place in that gathering."',
+ nAr:'أبو هريرة رضي الله عنه',nEn:'Abu Hurayrah (may Allah be pleased with him)',
+ src:'Jamiʿ al-Tirmidhi 3433 — graded Sahih by al-Albani',srcAr:'جامع الترمذي ٣٤٣٣ — صححه الألباني',grade:'sahih_albani'},
+{level:'occ',anchor:'people',icon:'🕊',
+ tAr:'إفشاء السلام',tEn:'Spreading the salam',
+ bAr:'سببُ التحابّ الذي لا يكتمل الإيمان إلا به.',
+ bEn:'The cause of mutual love, without which faith is incomplete.',
+ hAr:'قال رسول الله ﷺ: «لَا تَدْخُلُونَ الجَنَّةَ حَتَّى تُؤْمِنُوا، وَلَا تُؤْمِنُوا حَتَّى تَحَابُّوا، أَوَلَا أَدُلُّكُمْ عَلَى شَيْءٍ إِذَا فَعَلْتُمُوهُ تَحَابَبْتُمْ؟ أَفْشُوا السَّلَامَ بَيْنَكُمْ».',
+ hEn:'The Messenger of Allah ﷺ said: "You will not enter Paradise until you believe, and you will not believe until you love one another. Shall I not direct you to something which, if you do it, you will love one another? Spread the salam among yourselves."',
+ nAr:'أبو هريرة رضي الله عنه',nEn:'Abu Hurayrah (may Allah be pleased with him)',
+ src:'Sahih Muslim 54',srcAr:'صحيح مسلم ٥٤',grade:'sahih'},
+{level:'occ',anchor:'people',icon:'🤧',
+ tAr:'سنن العُطاس',tEn:'Sunan of sneezing',
+ bAr:'الحمد، فالترحّم، فالدعاء بالهداية وصلاح البال.',
+ bEn:'Praise, then the prayer of mercy, then the prayer for guidance.',
+ hAr:'قال رسول الله ﷺ: «إِذَا عَطَسَ أَحَدُكُمْ فَلْيَقُلِ: الحَمْدُ لِلَّهِ، وَلْيَقُلْ لَهُ أَخُوهُ أَوْ صَاحِبُهُ: يَرْحَمُكَ اللهُ، فَإِذَا قَالَ لَهُ: يَرْحَمُكَ اللهُ، فَلْيَقُلْ: يَهْدِيكُمُ اللهُ وَيُصْلِحُ بَالَكُمْ».',
+ hEn:'The Messenger of Allah ﷺ said: "When one of you sneezes, let him say: Alhamdulillah; and let his brother or companion say to him: May Allah have mercy on you; and when he says that, let him reply: May Allah guide you and set your affairs right."',
+ nAr:'أبو هريرة رضي الله عنه',nEn:'Abu Hurayrah (may Allah be pleased with him)',
+ src:'Sahih al-Bukhari 6224',srcAr:'صحيح البخاري ٦٢٢٤',grade:'sahih'},
+{level:'occ',anchor:'people',icon:'🩺',
+ tAr:'عيادة المريض',tEn:'Visiting the sick',
+ bAr:'«لا بأس، طهورٌ إن شاء الله».',
+ bEn:'"No harm; a purification, if Allah wills."',
+ hAr:'كان النبي ﷺ إذا دخل على مريضٍ يعوده قال: «لَا بَأْسَ، طَهُورٌ إِنْ شَاءَ اللهُ».',
+ hEn:'When the Prophet ﷺ visited a sick person he would say: "No harm; (it is) a purification, if Allah wills."',
+ nAr:'عبد الله بن عباس رضي الله عنهما',nEn:'ʿAbdullah ibn ʿAbbas (may Allah be pleased with them both)',
+ src:'Sahih al-Bukhari 5656',srcAr:'صحيح البخاري ٥٦٥٦',grade:'sahih'},
+{level:'occ',anchor:'travel',icon:'📅',
+ tAr:'الخروج يوم الخميس',tEn:'Setting out on Thursday',
+ bAr:'قلّما خرج ﷺ في سفرٍ إلا يوم الخميس.',
+ bEn:'He ﷺ rarely set out on a journey except on a Thursday.',
+ hAr:'قال كعب بن مالك رضي الله عنه: «لَقَلَّمَا كَانَ رَسُولُ اللهِ ﷺ يَخْرُجُ إِذَا خَرَجَ فِي سَفَرٍ إِلَّا يَوْمَ الخَمِيسِ».',
+ hEn:'Kaʿb ibn Malik said: "Rarely would the Messenger of Allah ﷺ set out on a journey except on a Thursday."',
+ nAr:'كعب بن مالك رضي الله عنه',nEn:'Kaʿb ibn Malik (may Allah be pleased with him)',
+ src:'Sahih al-Bukhari 2950',srcAr:'صحيح البخاري ٢٩٥٠',grade:'sahih'},
+{level:'occ',anchor:'travel',icon:'⛰',
+ tAr:'التكبير في الصعود والتسبيح في النزول',tEn:'Takbir on ascents, tasbih on descents',
+ bAr:'ذكرُ المسافر مع تضاريس الطريق.',
+ bEn:'The traveler\u2019s remembrance woven into the terrain.',
+ hAr:'قال جابر رضي الله عنه: «كُنَّا إِذَا صَعِدْنَا كَبَّرْنَا، وَإِذَا نَزَلْنَا سَبَّحْنَا».',
+ hEn:'Jabir said: "When we ascended we would say Allahu akbar, and when we descended we would say subhanAllah."',
+ nAr:'جابر بن عبد الله رضي الله عنهما',nEn:'Jabir ibn ʿAbdillah (may Allah be pleased with them)',
+ src:'Sahih al-Bukhari 2993',srcAr:'صحيح البخاري ٢٩٩٣',grade:'sahih'},
+{level:'occ',anchor:'travel',icon:'🕌',
+ tAr:'ركعتان في المسجد عند العودة',tEn:'Two rakʿahs in the mosque upon return',
+ bAr:'كان ﷺ إذا قدم من سفرٍ بدأ بالمسجد فصلى فيه ركعتين.',
+ bEn:'On returning from travel he ﷺ would begin at the mosque and pray two rakʿahs there.',
+ hAr:'قال كعب بن مالك رضي الله عنه: «كَانَ النَّبِيُّ ﷺ إِذَا قَدِمَ مِنْ سَفَرٍ بَدَأَ بِالمَسْجِدِ فَرَكَعَ فِيهِ رَكْعَتَيْنِ».',
+ hEn:'Kaʿb ibn Malik said: "When the Prophet ﷺ returned from a journey, he would begin at the mosque and pray two rakʿahs in it."',
+ nAr:'كعب بن مالك رضي الله عنه',nEn:'Kaʿb ibn Malik (may Allah be pleased with him)',
+ src:'Sahih al-Bukhari 3088 · Sahih Muslim 716',srcAr:'صحيح البخاري ٣٠٨٨ · صحيح مسلم ٧١٦',grade:'muttafaq'},
+{level:'occ',anchor:'nature',icon:'🌧',
+ tAr:'دعاء المطر',tEn:'The duʿa of rain',
+ bAr:'«اللهم صيِّبًا نافعًا».',
+ bEn:'"O Allah, a beneficial downpour."',
+ hAr:'كان النبي ﷺ إذا رأى المطر قال: «اللَّهُمَّ صَيِّبًا نَافِعًا».',
+ hEn:'When the Prophet ﷺ saw rain he would say: "O Allah, (make it) a beneficial downpour."',
+ nAr:'عائشة رضي الله عنها',nEn:'ʿAʾishah (may Allah be pleased with her)',
+ src:'Sahih al-Bukhari 1032',srcAr:'صحيح البخاري ١٠٣٢',grade:'sahih'},
+{level:'occ',anchor:'nature',icon:'🌬',
+ tAr:'دعاء الريح',tEn:'The duʿa of the wind',
+ bAr:'سؤالُ خيرها والاستعاذة من شرّها.',
+ bEn:'Asking for its good and seeking refuge from its harm.',
+ hAr:'كان النبي ﷺ إذا عصفت الريح قال: «اللَّهُمَّ إِنِّي أَسْأَلُكَ خَيْرَهَا وَخَيْرَ مَا فِيهَا وَخَيْرَ مَا أُرْسِلَتْ بِهِ، وَأَعُوذُ بِكَ مِنْ شَرِّهَا وَشَرِّ مَا فِيهَا وَشَرِّ مَا أُرْسِلَتْ بِهِ».',
+ hEn:'When the wind blew strongly, the Prophet ﷺ would say: "O Allah, I ask You for its good, the good of what is in it, and the good of what it was sent with; and I seek refuge in You from its evil, the evil of what is in it, and the evil of what it was sent with."',
+ nAr:'عائشة رضي الله عنها',nEn:'ʿAʾishah (may Allah be pleased with her)',
+ src:'Sahih Muslim 899',srcAr:'صحيح مسلم ٨٩٩',grade:'sahih'},
+{level:'occ',anchor:'quran',icon:'🛡',q:true,
+ tAr:'عشرُ الكهف عصمةٌ من الدجال',tEn:'Ten verses of al-Kahf against the Dajjal',
+ bAr:'من حفظ عشر آياتٍ من أولها عُصم من الدجال.',
+ bEn:'Whoever memorizes ten verses from its beginning is protected from the Dajjal.',
+ hAr:'قال رسول الله ﷺ: «مَنْ حَفِظَ عَشْرَ آيَاتٍ مِنْ أَوَّلِ سُورَةِ الكَهْفِ عُصِمَ مِنَ الدَّجَّالِ».',
+ hEn:'The Messenger of Allah ﷺ said: "Whoever memorizes ten verses from the beginning of Surat al-Kahf will be protected from the Dajjal."',
+ nAr:'أبو الدرداء رضي الله عنه',nEn:'Abu al-Dardaʾ (may Allah be pleased with him)',
+ src:'Sahih Muslim 809',srcAr:'صحيح مسلم ٨٠٩',grade:'sahih'},
+{level:'occ',anchor:'quran',icon:'⅓',q:true,
+ tAr:'الإخلاص تعدل ثلث القرآن',tEn:'Al-Ikhlas equals a third of the Qurʾan',
+ bAr:'ومَن أحبّها أحبّه الله.',
+ bEn:'And whoever loves it, Allah loves him.',
+ hAr:'قال رسول الله ﷺ: «وَالَّذِي نَفْسِي بِيَدِهِ، إِنَّهَا لَتَعْدِلُ ثُلُثَ القُرْآنِ». وفي قصة الرجل الذي كان يختم بها لحبّه إياها قال ﷺ: «أَخْبِرُوهُ أَنَّ اللهَ يُحِبُّهُ».',
+ hEn:'The Messenger of Allah ﷺ said: "By the One in whose hand is my soul, it equals a third of the Qurʾan." And of the man who always concluded his recitation with it out of love for it, he ﷺ said: "Tell him that Allah loves him."',
+ nAr:'أبو سعيد الخدري وعائشة رضي الله عنهما',nEn:'Abu Saʿid al-Khudri & ʿAʾishah (may Allah be pleased with them)',
+ src:'Sahih al-Bukhari 5013 · 7375',srcAr:'صحيح البخاري ٥٠١٣ · ٧٣٧٥',grade:'sahih'},
+{level:'occ',anchor:'quran',icon:'👑',q:true,
+ tAr:'الفاتحة: أعظم سورةٍ ورُقية',tEn:'Al-Fatihah: the greatest surah, and a ruqyah',
+ bAr:'السبع المثاني والقرآن العظيم، ورقيةٌ بإذن الله.',
+ bEn:'The seven oft-repeated verses and the Magnificent Qurʾan, and a means of healing by Allah\u2019s leave.',
+ hAr:'قال رسول الله ﷺ: «الحَمْدُ لِلَّهِ رَبِّ العَالَمِينَ هِيَ السَّبْعُ المَثَانِي وَالقُرْآنُ العَظِيمُ الَّذِي أُوتِيتُهُ». وقال ﷺ للذي رقى بها اللديغَ فبرأ: «وَمَا يُدْرِيكَ أَنَّهَا رُقْيَةٌ؟».',
+ hEn:'The Messenger of Allah ﷺ said: "Alhamdu lillahi Rabbil-ʿalamin is the seven oft-repeated verses and the Magnificent Qurʾan which I have been given." And to the companion who treated a stung man with it until he recovered, he ﷺ said: "And what made you know that it is a ruqyah?"',
+ nAr:'أبو سعيد بن المعلى وأبو سعيد الخدري رضي الله عنهما',nEn:'Abu Saʿid ibn al-Muʿalla & Abu Saʿid al-Khudri (may Allah be pleased with them)',
+ src:'Sahih al-Bukhari 4474 · 2276',srcAr:'صحيح البخاري ٤٤٧٤ · ٢٢٧٦',grade:'sahih'},
+{level:'occ',anchor:'quran',icon:'☁️',q:true,
+ tAr:'الزهراوان: البقرة وآل عمران',tEn:'The two radiant ones: al-Baqarah & Al ʿImran',
+ bAr:'تأتيان يوم القيامة كأنهما غمامتان تحاجّان عن أصحابهما.',
+ bEn:'They come on the Day of Resurrection like two clouds, pleading for their companions.',
+ hAr:'قال رسول الله ﷺ: «اقْرَؤُوا الزَّهْرَاوَيْنِ: البَقَرَةَ وَسُورَةَ آلِ عِمْرَانَ، فَإِنَّهُمَا تَأْتِيَانِ يَوْمَ القِيَامَةِ كَأَنَّهُمَا غَمَامَتَانِ، أَوْ كَأَنَّهُمَا غَيَايَتَانِ، أَوْ كَأَنَّهُمَا فِرْقَانِ مِنْ طَيْرٍ صَوَافَّ، تُحَاجَّانِ عَنْ أَصْحَابِهِمَا».',
+ hEn:'The Messenger of Allah ﷺ said: "Recite the two radiant ones: al-Baqarah and Surat Al ʿImran, for they will come on the Day of Resurrection like two clouds, or two canopies, or two flocks of birds in ranks, pleading on behalf of their companions."',
+ nAr:'أبو أمامة الباهلي رضي الله عنه',nEn:'Abu Umamah al-Bahili (may Allah be pleased with him)',
+ src:'Sahih Muslim 804',srcAr:'صحيح مسلم ٨٠٤',grade:'sahih'}
 ];
-const gFracDec = () => { const [f, d] = pick(FRACTIONS); return { prompt:`${f} as a decimal =`, answer:d }; };
-const gPctDec  = () => { const p = pick([1, 5, 10, 20, 25, 30, 40, 50, 60, 75, 80, 90]);
-                         return { prompt:`${p}% as a decimal =`, answer:round(p / 100) }; };
-function gSeqWhole() {
-  const start = ri(1, 20), step = ri(2, 12);
-  const t = i => start + step * i;
-  return { prompt:`${t(0)}, ${t(1)}, ${t(2)}, ${t(3)}, ☐`, answer:t(4) };
-}
-function gSeqDecimal() {
-  const start = ri(5, 60), step = ri(2, 25);           // in tenths
-  const t = i => round((start + step * i) / 10);
-  return { prompt:`${fmt(t(0))}, ${fmt(t(1))}, ${fmt(t(2))}, ${fmt(t(3))}, ☐`, answer:t(4) };
-}
 
-/* ---- the levels ---- */
-const LEVELS = [
-  {
-    n:1, title:"Level 1",
-    topics:"Addition from 1–10 · Doubles up to 10",
-    decimals:false,
-    pool:[ () => gAdd(10), () => gDouble(10) ],
-  },
-  {
-    n:2, title:"Level 2",
-    topics:"Addition from 1–20 · Subtraction from 1–20",
-    decimals:false,
-    pool:[ () => gAdd(20), () => gSub(20) ],
-  },
-  {
-    n:3, title:"Level 3",
-    topics:"Add & subtract to 50 · 2, 3, 4, 5, 10 times tables · Doubles & halves to 50 · Missing addends",
-    decimals:false,
-    pool:[
-      () => gAdd(50), () => gSub(50),
-      () => gTable([2, 3, 4, 5, 10], 12),
-      () => gDouble(50), () => gHalf(25),
-      () => gMissAdd(20),
-    ],
-  },
-  {
-    n:4, title:"Level 4",
-    topics:"Add & subtract to 100 · Tables to 10×10 · Doubles & halves to 100 · Division facts · Missing addends & factors",
-    decimals:false,
-    pool:[
-      () => gAdd(100), () => gSub(100),
-      () => gTable([1,2,3,4,5,6,7,8,9,10], 10),
-      () => gDouble(100), () => gHalf(50),
-      () => gDivide([2, 3, 4, 5, 10], 12),
-      () => gMissAdd(50), () => gMissFac(10),
-    ],
-  },
-  {
-    n:5, title:"Level 5",
-    topics:"Addition to 500 · Subtraction to 100 · All × and ÷ facts to 10×10 · Time & length conversions",
-    decimals:false,
-    pool:[
-      () => gAdd(500), () => gSub(100), () => gMissAdd(100),
-      () => gTable([1,2,3,4,5,6,7,8,9,10], 10),
-      () => gDivide([1,2,3,4,5,6,7,8,9,10], 10),
-      gTimeConv, gLengthConv,
-    ],
-  },
-  {
-    n:6, title:"Level 6",
-    topics:"Decimals · Brackets · Percentages · mm, cm & m · 24-hour time · Timetables · Fractions & sequences",
-    decimals:true,
-    pool:[
-      gDecimalOps, gBrackets, gPercent, gMetricConv,
-      g24Hour, gTimetable, gFracDec, gPctDec,
-      gSeqWhole, gSeqDecimal,
-    ],
-  },
-];
+/* ==================== APP ==================== */
+const S = {lang:'ar', theme:'dark', level:'year', selMonth:null};
+const $ = s => document.querySelector(s);
+const LEVELS = ['year','month','week','day','occ'];
+const OCC_ORDER = ['dua','people','travel','nature','quran'];
+const DAY_CONTENT = ['wake','fajr','withPrayer','duha','dhuhr','asr','maghrib','isha','night','sleep'];
+/* Hijri today via Umm al-Qura calendar */
+const TODAY = (()=>{ try{
+  const parts = new Intl.DateTimeFormat('en-u-ca-islamic-umalqura',{day:'numeric',month:'numeric'})
+    .formatToParts(new Date());
+  const g={}; parts.forEach(p=>g[p.type]=p.value);
+  const m=parseInt(g.month,10)-1, d=parseInt(g.day,10);
+  if(isNaN(m)||isNaN(d)) return null;
+  return {m, d, w:new Date().getDay()};
+}catch(e){ return null; } })();
+const SACRED = [0,6,10,11]; // Muharram, Rajab, Dhul-Qa'dah, Dhul-Hijjah
+const DAY_ORDER = ['wake','fajr','duha','dhuhr','asr','maghrib','isha','night','sleep'];
+const AR_NUM = n => String(n).replace(/\d/g, d => '٠١٢٣٤٥٦٧٨٩'[d]);
+const t = () => L[S.lang];
 
-/** Draw a question for a level, avoiding an immediate repeat. */
-function nextQuestion(levelNum, lastPrompt) {
-  const lv = LEVELS[levelNum - 1];
-  let q;
-  for (let i = 0; i < 12; i++) {
-    q = pick(lv.pool)();
-    if (q.prompt !== lastPrompt) break;
-  }
-  return q;
+/* ---------- controls ---------- */
+function applyChrome(){
+  const html=document.documentElement;
+  html.lang = S.lang; html.dir = S.lang==='ar' ? 'rtl':'ltr';
+  html.dataset.theme = S.theme;
+  $('#langLbl').textContent = t().langBtn;
+  $('#themeLbl').textContent = t().theme[S.theme];
+  $('#themeIco').innerHTML = S.theme==='dark'
+    ? '<circle cx="12" cy="12" r="4.5"/><path d="M12 2v2.5M12 19.5V22M2 12h2.5M19.5 12H22M4.6 4.6l1.8 1.8M17.6 17.6l1.8 1.8M19.4 4.6l-1.8 1.8M6.4 17.6l-1.8 1.8"/>'
+    : '<path d="M21 12.8A9 9 0 1 1 11.2 3 7 7 0 0 0 21 12.8z"/>';
+  $('#appTitle').textContent = t().title;
+  $('#appSubtitle').textContent = t().subtitle;
+  $('#tagline').textContent = t().tagline;
+  $('#footNote').textContent = t().foot;
 }
+$('#langBtn').onclick = () => { S.lang = S.lang==='ar'?'en':'ar'; applyChrome(); renderNav(); render(false); };
+$('#themeBtn').onclick = () => { S.theme = S.theme==='dark'?'light':'dark'; applyChrome(); };
 
-/**
- * Dev self-test. Run `__selftest()` from the browser console.
- * Asserts every generated question has a finite, non-negative answer,
- * and that only level 6 produces non-integers.
- */
-window.__selftest = function (perLevel = 500) {
-  const problems = [];
-  LEVELS.forEach(lv => {
-    for (let i = 0; i < perLevel; i++) {
-      const q = nextQuestion(lv.n, "");
-      const a = q.answer;
-      if (typeof a !== "number" || !isFinite(a)) problems.push(`L${lv.n} non-numeric: ${q.prompt} -> ${a}`);
-      else if (a < 0) problems.push(`L${lv.n} negative: ${q.prompt} -> ${a}`);
-      else if (!Number.isInteger(a) && !lv.decimals) problems.push(`L${lv.n} unexpected decimal: ${q.prompt} -> ${a}`);
-      else if (String(a).replace("-", "").replace(".", "").length > 6) problems.push(`L${lv.n} huge: ${q.prompt} -> ${a}`);
-      if (!q.prompt || typeof q.prompt !== "string") problems.push(`L${lv.n} bad prompt`);
-    }
+/* ---------- orbit nav ---------- */
+function ringsSVG(activeIdx){
+  const radii=[6,10,14,18,22];
+  let c = radii.map((r,i)=>`<circle cx="26" cy="26" r="${r}" class="${i===activeIdx?'active-ring':''}"/>`).join('');
+  return `<svg class="rings" viewBox="0 0 52 52">${c}<circle class="core" cx="26" cy="26" r="3"/></svg>`;
+}
+function renderNav(){
+  $('#orbitNav').innerHTML = LEVELS.map((lv,i)=>`
+    <button class="orbit-btn ${S.level===lv?'on':''}" data-lv="${lv}" aria-pressed="${S.level===lv}">
+      ${ringsSVG(i)}
+      <span class="lbl">${t().levels[lv]}</span>
+      <span class="sub">${t().levelSub[lv]}</span>
+    </button>`).join('');
+  document.querySelectorAll('.orbit-btn').forEach(b=>{
+    b.onclick=()=>{ if(b.dataset.lv!==S.level){
+      const zoomIn = LEVELS.indexOf(b.dataset.lv) > LEVELS.indexOf(S.level);
+      S.level=b.dataset.lv; S.selMonth=null; renderNav(); render(true, zoomIn);
+    }};
   });
-  if (problems.length) { console.error("SELFTEST FAILED", problems.slice(0, 25)); return { ok:false, problems }; }
-  console.log(`SELFTEST OK — ${perLevel * LEVELS.length} questions across ${LEVELS.length} levels`);
-  return { ok:true, problems:[] };
-};
+}
 
-/* ============================================================
-   2. AVATARS  (inline SVG, no external assets)
-   ============================================================ */
-const AVATARS = [
-  { bg:"#f5a623", skin:"#f7c9a0", hair:"#4a2c17", style:0 },
-  { bg:"#7ed321", skin:"#e0a878", hair:"#1f1a17", style:1 },
-  { bg:"#22c1dc", skin:"#f9d7b8", hair:"#c96a1b", style:2 },
-  { bg:"#9b59d0", skin:"#b87a4e", hair:"#2b1d12", style:3 },
-  { bg:"#e8443a", skin:"#f7c9a0", hair:"#e8c84b", style:1 },
-  { bg:"#2ecc9b", skin:"#8d5a35", hair:"#151210", style:0 },
-  { bg:"#ff7ab8", skin:"#f9d7b8", hair:"#7b3f9e", style:2 },
-  { bg:"#4a90e2", skin:"#e0a878", hair:"#8b8b8b", style:3 },
-];
-function avatarSVG(i) {
-  const a = AVATARS[((i % AVATARS.length) + AVATARS.length) % AVATARS.length];
-  const hair = [
-    `<path d="M15 33c0-10 7-18 17-18s17 8 17 18c0-4-6-8-17-8s-17 4-17 8z" fill="${a.hair}"/>`,
-    `<path d="M14 35c0-12 8-20 18-20s18 8 18 20c0 0-3-10-18-10s-18 10-18 10z" fill="${a.hair}"/><circle cx="32" cy="13" r="7" fill="${a.hair}"/>`,
-    `<path d="M14 35c0-12 8-20 18-20s18 8 18 20c0 0-2-11-18-11s-18 11-18 11z" fill="${a.hair}"/><path d="M14 32c-2 9-1 15 1 20l5-2c-2-6-3-12-2-17z" fill="${a.hair}"/><path d="M50 32c2 9 1 15-1 20l-5-2c2-6 3-12 2-17z" fill="${a.hair}"/>`,
-    `<path d="M15 34c0-11 7-19 17-19s17 8 17 19c0-4-4-7-9-7-4 0-5 3-8 3s-4-3-8-3c-5 0-9 3-9 7z" fill="${a.hair}"/>`,
-  ][a.style];
-  return `<svg viewBox="0 0 64 64" aria-hidden="true">
-    <circle cx="32" cy="32" r="32" fill="${a.bg}"/>
-    <ellipse cx="15" cy="38" rx="4" ry="5" fill="${a.skin}"/>
-    <ellipse cx="49" cy="38" rx="4" ry="5" fill="${a.skin}"/>
-    <ellipse cx="32" cy="37" rx="17" ry="19" fill="${a.skin}"/>
-    ${hair}
-    <circle cx="25.5" cy="37" r="2.6" fill="#2b2b2b"/>
-    <circle cx="38.5" cy="37" r="2.6" fill="#2b2b2b"/>
-    <circle cx="26.4" cy="36.2" r=".9" fill="#fff"/>
-    <circle cx="39.4" cy="36.2" r=".9" fill="#fff"/>
-    <path d="M25 45c2 3.4 5 5 7 5s5-1.6 7-5" stroke="#8a4a35" stroke-width="2.6" fill="none" stroke-linecap="round"/>
+/* ---------- stage visuals ---------- */
+function polar(cx,cy,r,a){ return [cx + r*Math.cos(a), cy + r*Math.sin(a)]; }
+function segPath(cx,cy,r1,r2,a1,a2){
+  const [x1,y1]=polar(cx,cy,r2,a1),[x2,y2]=polar(cx,cy,r2,a2),
+        [x3,y3]=polar(cx,cy,r1,a2),[x4,y4]=polar(cx,cy,r1,a1);
+  return `M${x1} ${y1} A${r2} ${r2} 0 0 1 ${x2} ${y2} L${x3} ${y3} A${r1} ${r1} 0 0 0 ${x4} ${y4} Z`;
+}
+function yearWheel(){
+  const cx=230,cy=230,r1=118,r2=214,gap=0.035;
+  const monthsWithSunan = new Set(E.filter(e=>e.level==='year').map(e=>e.anchor));
+  let segs='';
+  for(let i=0;i<12;i++){
+    const a1=-Math.PI/2 + i*(Math.PI*2/12)+gap, a2=-Math.PI/2 + (i+1)*(Math.PI*2/12)-gap;
+    const mid=(a1+a2)/2, [tx,ty]=polar(cx,cy,(r1+r2)/2,mid), [dx,dy]=polar(cx,cy,r2-16,mid);
+    const has=monthsWithSunan.has(i), sacred=SACRED.includes(i);
+    let sacredArc='';
+    if(sacred){ const [sx1,sy1]=polar(cx,cy,r1-8,a1),[sx2,sy2]=polar(cx,cy,r1-8,a2);
+      sacredArc=`<path class="sacred-mark" d="M${sx1} ${sy1} A${r1-8} ${r1-8} 0 0 1 ${sx2} ${sy2}"/>`; }
+    const tnow = TODAY && TODAY.m===i;
+    segs+=`<g class="wheel-seg ${has?'has-sunan':''} ${S.selMonth===i?'sel':''} ${tnow?'tnow':''}" data-m="${i}" role="button" tabindex="0" aria-label="${t().months[i]}">
+      <path class="arc" d="${segPath(cx,cy,r1,r2,a1,a2)}"/>
+      ${has?`<circle class="dot" cx="${dx}" cy="${dy}" r="3.4"/>`:''}
+      <text x="${tx}" y="${ty}" text-anchor="middle" dominant-baseline="middle">${t().months[i]}</text>
+      ${sacredArc}</g>`;
+  }
+  return `<div class="wheel-holder"><svg class="year-wheel" viewBox="0 0 460 460">
+    ${segs}
+    <text class="wheel-center-t" x="${cx}" y="${cy-8}" text-anchor="middle" font-size="26">${t().wheelCenter[0]}</text>
+    <text class="wheel-center-t" x="${cx}" y="${cy+26}" text-anchor="middle" font-size="${S.lang==='ar'?26:18}">${t().wheelCenter[1]}</text>
+  </svg></div>
+  <p class="stage-caption">${t().sacredNote}${TODAY?` · ${t().todayLbl}: ${t().months[TODAY.m]} ${S.lang==='ar'?AR_NUM(TODAY.d):TODAY.d}`:''}</p>`;
+}
+function moonSVG(night){ // phase illustration across 30 nights
+  const r=13;
+  if(night>=13&&night<=15) return `<svg viewBox="0 0 30 30"><circle class="moon-face" cx="15" cy="15" r="${r}"/></svg>`;
+  const p=night/30, k=Math.cos(p*2*Math.PI)*r, waxing=p<0.5;
+  const outerSweep = waxing?1:0;                 // lit limb: right while waxing, left while waning
+  const termSweep  = waxing ? (k>0?0:1) : (k>0?1:0); // terminator bulge
+  return `<svg viewBox="0 0 30 30">
+    <circle class="moon-dark" cx="15" cy="15" r="${r}"/>
+    <path class="moon-face" d="M15 ${15-r} A ${r} ${r} 0 0 ${outerSweep} 15 ${15+r} A ${Math.abs(k).toFixed(2)} ${r} 0 0 ${termSweep} 15 ${15-r} Z"/>
   </svg>`;
 }
-
-const BOT_NAMES = ["Ravi","Mia","Sam","Zoe","Leo","Ana","Kai","Nina","Omar","Tess","Jules","Bo"];
-const LANE_COLORS = { you:"var(--lime)", bots:["var(--orange)","var(--cyan)","var(--purple)"] };
-
-/* Bot answer-rate bands (correct answers per minute), indexed by level. */
-const BOT_RATES = { 1:[34,56], 2:[30,46], 3:[25,38], 4:[22,34], 5:[18,28], 6:[14,24] };
-
-/* ============================================================
-   3. PERSISTENT STATE
-   ============================================================ */
-const SAVE_KEY = "mathletics.save.v1";
-const state = {
-  name:"You", avatar:0, muted:false,
-  inputMode:"auto",          // "auto" | "touch" | "keys"
-  challengeLevel:1,
-  highs:{},                  // { levelNumber: bestScore }
-};
-function load() {
-  try {
-    const raw = localStorage.getItem(SAVE_KEY);
-    if (raw) Object.assign(state, JSON.parse(raw));
-  } catch (e) { /* corrupt or unavailable storage — fall back to defaults */ }
-}
-function save() {
-  try { localStorage.setItem(SAVE_KEY, JSON.stringify(state)); }
-  catch (e) { /* private mode / quota — the game still works, just won't persist */ }
-}
-
-/* ============================================================
-   4. SOUND  (WebAudio only — no audio files)
-   ============================================================ */
-let audioCtx = null;
-function tone(freq, dur = 0.09, type = "sine", gain = 0.16, delay = 0) {
-  if (state.muted) return;
-  try {
-    if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-    if (audioCtx.state === "suspended") audioCtx.resume();
-    const t0 = audioCtx.currentTime + delay;
-    const osc = audioCtx.createOscillator(), g = audioCtx.createGain();
-    osc.type = type; osc.frequency.setValueAtTime(freq, t0);
-    g.gain.setValueAtTime(0, t0);
-    g.gain.linearRampToValueAtTime(gain, t0 + 0.012);
-    g.gain.exponentialRampToValueAtTime(0.0001, t0 + dur);
-    osc.connect(g); g.connect(audioCtx.destination);
-    osc.start(t0); osc.stop(t0 + dur + 0.02);
-  } catch (e) { /* audio unavailable — silent is fine */ }
-}
-const sfx = {
-  correct(){ tone(660, .08, "triangle", .16); tone(990, .1, "triangle", .13, .06); },
-  wrong(){ tone(150, .2, "sawtooth", .11); },
-  key(){ tone(430, .03, "square", .05); },
-  tick(){ tone(880, .05, "square", .09); },
-  start(){ tone(520, .12, "triangle", .15); },
-  finish(){ [523, 659, 784, 1047].forEach((f, i) => tone(f, .26, "triangle", .17, i * .11)); },
-};
-
-/* ============================================================
-   5. SCREEN ROUTER
-   ============================================================ */
-let currentScreen = "home";
-function show(name) {
-  currentScreen = name;
-  document.querySelectorAll(".screen").forEach(s => s.classList.remove("active"));
-  $("screen-" + name).classList.add("active");
-  window.scrollTo(0, 0);
-}
-document.querySelectorAll("[data-go]").forEach(b =>
-  b.addEventListener("click", () => show(b.dataset.go)));
-
-/* ============================================================
-   6. HOME SCREEN
-   ============================================================ */
-function renderAvatars() {
-  $("avatarGrid").innerHTML = AVATARS.map((_, i) =>
-    `<button class="avatar-pick" data-avatar="${i}" aria-pressed="${i === state.avatar}"
-       aria-label="Avatar ${i + 1}">${avatarSVG(i)}</button>`).join("");
-  $("avatarGrid").querySelectorAll("[data-avatar]").forEach(b =>
-    b.addEventListener("click", () => {
-      state.avatar = +b.dataset.avatar; save(); renderAvatars(); sfx.key();
-    }));
-}
-$("nameInput").addEventListener("input", e => {
-  state.name = e.target.value.trim().slice(0, 12) || "You"; save();
-});
-$("goLevels").addEventListener("click", () => { renderLevels(); show("levels"); });
-
-const MODE_LABEL = { auto:"Auto", touch:"Phone", keys:"Laptop" };
-function refreshToggles() {
-  $("modeToggle").textContent = "Input: " + MODE_LABEL[state.inputMode] +
-    (state.inputMode === "auto" ? ` (${usingTouch() ? "phone" : "laptop"})` : "");
-  $("soundToggle").textContent = "Sound: " + (state.muted ? "Off" : "On");
-}
-$("modeToggle").addEventListener("click", () => {
-  state.inputMode = { auto:"touch", touch:"keys", keys:"auto" }[state.inputMode];
-  save(); refreshToggles();
-  if (currentScreen === "race") renderInputArea();
-});
-$("soundToggle").addEventListener("click", () => {
-  state.muted = !state.muted; save(); refreshToggles(); sfx.key();
-});
-
-/** Effective input mode: manual override wins, otherwise sniff the device. */
-function usingTouch() {
-  if (state.inputMode === "touch") return true;
-  if (state.inputMode === "keys") return false;
-  return window.matchMedia("(pointer: coarse)").matches
-      || navigator.maxTouchPoints > 0
-      || window.innerWidth < 700;
-}
-
-/* ============================================================
-   7. LEVEL SELECT
-   ============================================================ */
-function renderLevels() {
-  $("levelList").innerHTML = LEVELS.map(lv => {
-    const isChallenge = lv.n === state.challengeLevel;
-    const high = state.highs[lv.n] || 0;
-    return `<button class="level-card ${isChallenge ? "challenge" : ""}" data-level="${lv.n}">
-      <div class="level-num">${lv.n}</div>
-      <div class="level-body">
-        <strong>${lv.title} ${isChallenge ? '<span class="star">★</span>' : ""}</strong>
-        <span>${lv.topics}</span>
-      </div>
-      <div class="level-meta">${high ? `<b>${high}</b>best` : ""}</div>
-    </button>`;
-  }).join("");
-  $("levelList").querySelectorAll("[data-level]").forEach(b =>
-    b.addEventListener("click", () => startRace(+b.dataset.level)));
-}
-
-/* ============================================================
-   8. RACE
-   ============================================================ */
-const RACE_MS = 60000;
-let race = null;
-let rafId = null;
-
-function startRace(levelNum) {
-  const [lo, hi] = BOT_RATES[levelNum];
-  const botNames = [];
-  while (botNames.length < 3) {
-    const n = pick(BOT_NAMES);
-    if (!botNames.includes(n) && n !== state.name) botNames.push(n);
+function monthStrip(){
+  let cells='';
+  for(let n=1;n<=30;n++){
+    const tnow = TODAY && TODAY.d===n;
+    cells+=`<div class="moon-night ${n>=13&&n<=15?'white':''} ${tnow?'tnow':''}" title="${t().night} ${S.lang==='ar'?AR_NUM(n):n}">
+      ${moonSVG(n)}<span class="n">${S.lang==='ar'?AR_NUM(n):n}</span>
+      <span class="juz">${t().juzLbl}${S.lang==='ar'?AR_NUM(n):n}</span>
+      ${tnow?`<span class="today-tag">${t().todayLbl}</span>`:''}</div>`;
   }
-  // Give each bot a distinct avatar, none matching the player's.
-  const avatarPool = AVATARS.map((_, i) => i).filter(i => i !== state.avatar);
-  for (let i = avatarPool.length - 1; i > 0; i--) {          // Fisher-Yates
-    const j = ri(0, i);
-    [avatarPool[i], avatarPool[j]] = [avatarPool[j], avatarPool[i]];
+  return `<div class="moon-strip">${cells}</div><p class="stage-caption">${t().monthCaption} · ${S.lang==='ar'?'جزءٌ كل ليلةٍ يُتمّ الختمة':'a juzʾ each night completes the khatmah'}</p>`;
+}
+function weekRow(){
+  const marks={1:'☽',4:'☽',5:'۞'};
+  const heights={5:'h110',1:'h80',4:'h80'};
+  let out='';
+  for(let d=0;d<7;d++){
+    const tnow = TODAY && TODAY.w===d;
+    out+=`<div class="arch ${heights[d]||'h60'} ${d===5?'jumuah':''} ${(d===1||d===4)?'marked':''} ${tnow?'tnow':''}">
+      <div class="mihrab"><span class="glyph">${marks[d]||'·'}</span></div>
+      <div class="dname">${t().days[d]}${tnow?`<span class="today-tag">${t().todayLbl}</span>`:''}</div></div>`;
   }
-
-  race = {
-    level:levelNum,
-    doubled:levelNum === state.challengeLevel,
-    startedAt:0,
-    running:false,
-    typed:"",
-    lastPrompt:"",
-    current:null,
-    wrong:[],
-    lastTickSecond:-1,
-    players:[
-      { name:state.name, avatar:state.avatar, color:LANE_COLORS.you, score:0, you:true },
-      ...botNames.map((n, i) => {
-        const rate = lo + Math.random() * (hi - lo);
-        return {
-          name:n,
-          avatar:avatarPool[i % avatarPool.length],
-          color:LANE_COLORS.bots[i],
-          score:0, you:false,
-          interval:60000 / rate,
-          nextAt:0,
-        };
-      }),
-    ],
-  };
-
-  $("raceLevelLabel").innerHTML =
-    `Level ${levelNum}` + (race.doubled ? ` <span class="dbl">★ double points</span>` : "");
-  renderLanes();
-  renderInputArea();
-  $("answerBox").textContent = "";
-  $("questionText").textContent = "";
-  setTimerVisual(1, 60);
-  show("race");
-  runCountdown();
+  return `<div class="week-row">${out}</div><p class="stage-caption">${t().weekCaption}</p>`;
 }
-
-/** 3–2–1 intro, then the clock starts. */
-function runCountdown() {
-  const el = document.createElement("div");
-  el.className = "countdown";
-  document.body.appendChild(el);
-  let n = 3;
-  const step = () => {
-    if (!race) { el.remove(); return; }   // quit during the intro — stand down
-    if (n > 0) {
-      el.innerHTML = `<span>${n}</span>`;
-      sfx.start();
-      n--;
-      setTimeout(step, 700);
-    } else {
-      el.innerHTML = `<span>GO!</span>`;
-      sfx.correct();
-      setTimeout(() => { el.remove(); if (race) beginRace(); }, 500);
-    }
-  };
-  step();
-}
-
-function beginRace() {
-  const now = performance.now();
-  race.startedAt = now;
-  race.running = true;
-  race.players.forEach(p => { if (!p.you) p.nextAt = now + p.interval * (0.5 + Math.random()); });
-  askQuestion();
-  rafId = requestAnimationFrame(tick);
-}
-
-function askQuestion() {
-  race.current = nextQuestion(race.level, race.lastPrompt);
-  race.lastPrompt = race.current.prompt;
-  race.typed = "";
-  $("questionText").textContent = race.current.prompt;
-  drawAnswer();
-}
-
-function drawAnswer() {
-  const box = $("answerBox");
-  box.textContent = race.typed;
-  if (!race.typed) box.innerHTML = '<span class="caret"></span>';
-}
-
-/* ---- the frame loop: timer, bots, lane widths ---- */
-function tick(now) {
-  if (!race || !race.running) return;
-  const elapsed = now - race.startedAt;
-  const remain = Math.max(0, RACE_MS - elapsed);
-  const secs = Math.ceil(remain / 1000);
-
-  setTimerVisual(remain / RACE_MS, secs);
-  if (secs <= 5 && secs > 0 && secs !== race.lastTickSecond) { sfx.tick(); race.lastTickSecond = secs; }
-
-  // Bots score on a jittered schedule so their arrows advance unevenly.
-  race.players.forEach(p => {
-    if (p.you) return;
-    while (now >= p.nextAt && race.running) {
-      p.score++;
-      p.nextAt += p.interval * (0.6 + Math.random() * 0.8);
-    }
+function dayArc(){
+  const W=680,H=250,cx=W/2,cy=210,R=180;
+  const stops=DAY_ORDER;
+  let marks='';
+  stops.forEach((k,i)=>{
+    const a=Math.PI + (i/(stops.length-1))*Math.PI;
+    const [x,y]=polar(cx,cy,R,a);
+    const above = y < cy-40;
+    marks+=`<g class="arc-stop" data-stop="${k}" role="button" tabindex="0">
+      <circle cx="${x}" cy="${y}" r="7"/>
+      <text x="${x}" y="${y + (above?-16:-16)}" text-anchor="middle">${t().dayStops[k]}</text></g>`;
   });
-  updateLanes();
-
-  if (remain <= 0) { endRace(); return; }
-  rafId = requestAnimationFrame(tick);
+  const now=new Date(), hh=now.getHours()+now.getMinutes()/60;
+  const frac=Math.min(1,Math.max(0,(hh-5)/16)); // 5:00 -> 21:00 across the arc
+  const [sx,sy]=polar(cx,cy,R,Math.PI+frac*Math.PI);
+  const isNightNow = hh<5||hh>19;
+  return `<div class="day-arc-holder"><svg class="day-arc" viewBox="0 0 ${W} ${H+20}">
+    <line class="horizon" x1="20" y1="${cy}" x2="${W-20}" y2="${cy}"/>
+    <path class="arc-path" d="M ${cx-R} ${cy} A ${R} ${R} 0 0 1 ${cx+R} ${cy}"/>
+    ${isNightNow
+      ? `<circle class="arc-moon" cx="${sx}" cy="${sy}" r="8"/>`
+      : `<circle class="arc-sun" cx="${sx}" cy="${sy}" r="9"/>`}
+    <g class="wp-hub" role="button" tabindex="0" aria-label="${t().withPrayer}">
+      <circle cx="${cx}" cy="${cy-58}" r="46"/>
+      <text x="${cx}" y="${cy-64}" text-anchor="middle">۞</text>
+      <text x="${cx}" y="${cy-44}" text-anchor="middle">${t().withPrayer}</text>
+    </g>
+    ${marks}</svg></div>
+  <p class="stage-caption">${t().dayCaption}</p>`;
 }
 
-const RING_LEN = 2 * Math.PI * 44;
-function setTimerVisual(frac, secs) {
-  const ring = $("ringFg");
-  ring.style.strokeDasharray = RING_LEN;
-  ring.style.strokeDashoffset = RING_LEN * (1 - Math.max(0, Math.min(1, frac)));
-  $("timerNum").textContent = secs;
-  const t = $("timer");
-  t.classList.toggle("warn", secs <= 15 && secs > 5);
-  t.classList.toggle("danger", secs <= 5);
+function occStar(){
+  const W=560,H=330,cx=W/2,cy=H/2,R=118;
+  // eight-pointed star (two rotated squares)
+  const sq=(rot)=>{let p=[];for(let i=0;i<4;i++){const a=rot+i*Math.PI/2;p.push(polar(cx,cy,62,a).map(v=>v.toFixed(1)).join(' '));}return 'M'+p.join(' L')+' Z';};
+  let nodes='';
+  OCC_ORDER.forEach((k,i)=>{
+    const a=-Math.PI/2 + i*(Math.PI*2/OCC_ORDER.length);
+    const [x,y]=polar(cx,cy,R+16,a);
+    const [lx,ly]=polar(cx,cy,R+16,a);
+    nodes+=`<line class="occ-line" x1="${cx}" y1="${cy}" x2="${x}" y2="${y}"/>
+      <g class="occ-node" data-occ="${k}" role="button" tabindex="0" aria-label="${t().occGroups[k]}">
+      <circle cx="${x}" cy="${y}" r="30"/>
+      <text class="oico" x="${x}" y="${y+6}" text-anchor="middle">${t().occIcons[k]}</text>
+      <text class="olbl" x="${x}" y="${y+52}" text-anchor="middle">${t().occGroups[k]}</text></g>`;
+  });
+  return `<div class="occ-holder"><svg class="occ-star" viewBox="0 0 ${W} ${H+30}">
+    <path class="occ-core occ-core-fill" d="${sq(0)}"/>
+    <path class="occ-core" d="${sq(Math.PI/4)}"/>
+    <text class="occ-glyph" x="${cx}" y="${cy+14}" text-anchor="middle">۞</text>
+    ${nodes}</svg></div>
+  <p class="stage-caption">${t().occCaption}</p>`;
 }
 
-function renderLanes() {
-  $("lanes").innerHTML = race.players.map((p, i) => `
-    <div class="lane ${p.you ? "you" : ""}">
-      <div class="racer-box">${avatarSVG(p.avatar)}<span class="rname">${escapeHTML(p.name)}</span></div>
-      <div class="track">
-        <div class="arrow" id="arrow${i}" style="background:${p.color};width:4%"></div>
-        <span class="lane-score" id="lscore${i}" style="left:4%">0</span>
+/* ---------- cards ---------- */
+function gradeLabel(g){ return t().grades[g] || t().grades.sahih; }
+function cardHTML(e,idx){
+  return `<article class="card" style="animation-delay:${Math.min(idx*60,420)}ms">
+    <button class="card-head" aria-expanded="false">
+      <span class="card-ico">${e.icon}</span>
+      <span class="card-tt">
+        <span class="ct">${S.lang==='ar'?e.tAr:e.tEn}${e.q?`<span class="qbadge">﴿﴾</span>`:''}</span><br>
+        <span class="cb">${S.lang==='ar'?e.bAr:e.bEn}</span>
+      </span>
+      <svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9l6 6 6-6"/></svg>
+    </button>
+    <div class="card-body">
+      <div class="card-inner">
+        <p class="hadith-ar">${e.hAr}</p>
+        <p class="hadith-en">${e.hEn}</p>
+        <div class="meta-row">
+          <span class="chip">${t().narrator}: ${S.lang==='ar'?e.nAr:e.nEn}</span>
+          <span class="chip src">${S.lang==='ar'?e.srcAr:e.src}</span>
+          <span class="chip grade">✓ ${gradeLabel(e.grade)}</span>
+        </div>
+        ${(S.lang==='ar'?e.noteAr:e.noteEn)?`<p class="gnote">${S.lang==='ar'?e.noteAr:e.noteEn}</p>`:''}
       </div>
-    </div>`).join("");
+    </div>
+  </article>`;
 }
-
-function updateLanes() {
-  const leader = Math.max(1, ...race.players.map(p => p.score));
-  race.players.forEach((p, i) => {
-    const w = 4 + (p.score / leader) * 80;   // 4% → 84%, leaving room for the number
-    const arrow = $("arrow" + i), sc = $("lscore" + i);
-    if (!arrow) return;
-    arrow.style.width = w + "%";
-    sc.style.left = w + "%";
-    sc.textContent = p.score;
+function groupHTML(title, sub, entries, startIdx){
+  return `<section class="group" ${sub?`id="g-${sub.replace(/\W/g,'')}"`:''}>
+    <div class="group-h"><span class="rule"></span>
+      <span class="gt"><span class="star8">۞</span>${title}<span class="star8">۞</span></span>
+      <span class="rule"></span></div>
+    <div class="cards">${entries.map((e,i)=>cardHTML(e,startIdx+i)).join('')}</div>
+  </section>`;
+}
+function bindCards(){
+  document.querySelectorAll('.card-head').forEach(h=>{
+    h.onclick=()=>{
+      const card=h.closest('.card'), body=card.querySelector('.card-body');
+      const open=card.classList.toggle('open');
+      h.setAttribute('aria-expanded',open);
+      body.style.maxHeight = open ? body.scrollHeight+'px' : '0px';
+    };
   });
 }
 
-const escapeHTML = s => String(s).replace(/[&<>"']/g,
-  c => ({ "&":"&amp;", "<":"&lt;", ">":"&gt;", '"':"&quot;", "'":"&#39;" }[c]));
-
-/* ---- answering ---- */
-function press(key) {
-  if (!race || !race.running) return;
-  if (key === "back") { race.typed = race.typed.slice(0, -1); sfx.key(); drawAnswer(); return; }
-  if (key === "enter") { submitAnswer(); return; }
-  if (key === "." && (race.typed.includes(".") || !LEVELS[race.level - 1].decimals)) return;
-  if (race.typed.length >= 7) return;
-  race.typed += key;
-  sfx.key();
-  drawAnswer();
-}
-
-function submitAnswer() {
-  if (!race || !race.running) return;
-  const raw = race.typed.trim();
-  if (raw === "" || raw === ".") return;          // ignore empty submissions
-  const given = parseFloat(raw);
-  const box = $("answerBox");
-  const correct = isFinite(given) && Math.abs(given - race.current.answer) < 1e-9;
-
-  if (correct) {
-    const me = race.players[0];
-    me.score += race.doubled ? 2 : 1;
-    box.classList.add("correct");
-    sfx.correct();
-    updateLanes();
-  } else {
-    race.wrong.push({ prompt:race.current.prompt, answer:race.current.answer, given:raw });
-    box.classList.add("wrong");
-    sfx.wrong();
+/* ---------- level content ---------- */
+function contentYear(){
+  let html='',idx=0;
+  const order=[0,7,8,9,11];
+  const months = S.selMonth!==null ? [S.selMonth] : order;
+  months.forEach(m=>{
+    const es=E.filter(e=>e.level==='year'&&e.anchor===m);
+    if(es.length){ html+=groupHTML(t().months[m],'m'+m,es,idx); idx+=es.length; }
+  });
+  if(S.selMonth!==null && !E.some(e=>e.level==='year'&&e.anchor===S.selMonth)){
+    html=`<p class="level-intro">${S.lang==='ar'
+      ?'ليس لهذا الشهر سُنَّةٌ مخصوصة ثابتة، ويبقى فيه عموم السُّنَن الشهرية واليومية.'
+      :'No sunnah is specific to this month in the authentic record; the general monthly and daily sunan remain.'}</p>`;
   }
-  setTimeout(() => box.classList.remove("correct", "wrong"), 260);
-  askQuestion();
+  return html;
+}
+function contentMonth(){
+  const es=E.filter(e=>e.level==='month');
+  return groupHTML(t().groupAllMonth,null,es,0);
+}
+function contentWeek(){
+  let html='',idx=0;
+  [1,4,5].forEach(d=>{
+    const es=E.filter(e=>e.level==='week'&&e.anchor===d);
+    if(es.length){ html+=groupHTML(t().days[d],'d'+d,es,idx); idx+=es.length; }
+  });
+  return html;
+}
+function contentDay(){
+  let html='',idx=0;
+  DAY_CONTENT.forEach(k=>{
+    const es=E.filter(e=>e.level==='day'&&e.anchor===k);
+    const title = k==='withPrayer' ? t().withPrayer : t().dayStops[k];
+    if(es.length){ html+=`<div id="stop-${k}"></div>`+groupHTML(title,'s'+k,es,idx); idx+=es.length; }
+  });
+  return html;
+}
+function contentOcc(){
+  let html='',idx=0;
+  OCC_ORDER.forEach(k=>{
+    const es=E.filter(e=>e.level==='occ'&&e.anchor===k);
+    if(es.length){ html+=`<div id="occg-${k}"></div>`+groupHTML(t().occGroups[k],'o'+k,es,idx); idx+=es.length; }
+  });
+  return html;
 }
 
-/* ---- input surfaces ---- */
-const KEYPAD_HTML = `
-  <div class="keypad" id="keypad">
-    <button data-k="7">7</button><button data-k="8">8</button><button data-k="9">9</button>
-    <button class="k-back" data-k="back">⌫</button>
-    <button data-k="4">4</button><button data-k="5">5</button><button data-k="6">6</button>
-    <button class="k-enter" data-k="enter">↵</button>
-    <button data-k="1">1</button><button data-k="2">2</button><button data-k="3">3</button>
-    <button class="k-dot" data-k=".">.</button><button class="k-zero" data-k="0">0</button>
-  </div>`;
-
-function renderInputArea() {
-  const area = $("inputArea");
-  if (usingTouch()) {
-    area.innerHTML = KEYPAD_HTML;
-    if (race && LEVELS[race.level - 1].decimals) $("keypad").classList.add("with-dot");
-    area.querySelectorAll("[data-k]").forEach(b => {
-      // pointerdown beats click for responsiveness on touch; preventDefault
-      // stops the follow-up synthetic click and any double-tap zoom.
-      b.addEventListener("pointerdown", e => { e.preventDefault(); press(b.dataset.k); });
-    });
-  } else {
-    area.innerHTML = `<div class="kb-hint">Type your answer &nbsp;·&nbsp;
-      <kbd>Enter</kbd> to submit &nbsp;·&nbsp; <kbd>Esc</kbd> to quit</div>`;
-  }
+/* ---------- render + zoom ---------- */
+function stageHTML(){
+  return {year:yearWheel, month:monthStrip, week:weekRow, day:dayArc, occ:occStar}[S.level]();
+}
+function contentHTML(){
+  return {year:contentYear, month:contentMonth, week:contentWeek, day:contentDay, occ:contentOcc}[S.level]();
+}
+function paint(){
+  $('#stage').innerHTML = stageHTML();
+  $('#levelIntro').textContent = t().intro[S.level];
+  $('#content').innerHTML = contentHTML();
+  bindCards();
+  document.querySelectorAll('.wheel-seg').forEach(g=>{
+    const go=()=>{ S.selMonth = (S.selMonth===+g.dataset.m)?null:+g.dataset.m; paint(); };
+    g.onclick=go; g.onkeydown=e=>{ if(e.key==='Enter'||e.key===' '){e.preventDefault();go();} };
+  });
+  document.querySelectorAll('.arc-stop').forEach(g=>{
+    const go=()=>{ const el=$('#stop-'+g.dataset.stop); if(el) el.scrollIntoView({behavior:'smooth',block:'start'}); };
+    g.onclick=go; g.onkeydown=e=>{ if(e.key==='Enter'||e.key===' '){e.preventDefault();go();} };
+  });
+  document.querySelectorAll('.wp-hub').forEach(g=>{
+    const go=()=>{ const el=$('#stop-withPrayer'); if(el) el.scrollIntoView({behavior:'smooth',block:'start'}); };
+    g.onclick=go; g.onkeydown=e=>{ if(e.key==='Enter'||e.key===' '){e.preventDefault();go();} };
+  });
+  document.querySelectorAll('.occ-node').forEach(g=>{
+    const go=()=>{ const el=$('#occg-'+g.dataset.occ); if(el) el.scrollIntoView({behavior:'smooth',block:'start'}); };
+    g.onclick=go; g.onkeydown=e=>{ if(e.key==='Enter'||e.key===' '){e.preventDefault();go();} };
+  });
+}
+function render(animate, zoomIn=true){
+  const st=$('#stage');
+  if(!animate){ paint(); return; }
+  st.classList.add(zoomIn?'zooming-in':'zooming-out');
+  setTimeout(()=>{ paint();
+    st.classList.remove('zooming-in','zooming-out');
+  }, 380);
 }
 
-window.addEventListener("keydown", e => {
-  if (currentScreen !== "race") return;
-  if (e.key === "Escape") { quitRace(); return; }
-  if (!race || !race.running) return;
-  if (e.key >= "0" && e.key <= "9") { press(e.key); e.preventDefault(); }
-  else if (e.key === ".") { press("."); e.preventDefault(); }
-  else if (e.key === "Backspace") { press("back"); e.preventDefault(); }
-  else if (e.key === "Enter") { press("enter"); e.preventDefault(); }
-});
+/* ---------- starfield ---------- */
+(function(){
+  const cv=$('#stars'),ctx=cv.getContext('2d');
+  let stars=[];
+  function size(){ cv.width=innerWidth; cv.height=innerHeight;
+    stars=Array.from({length:90},()=>({x:Math.random()*cv.width,y:Math.random()*cv.height,
+      r:Math.random()*1.3+0.2,p:Math.random()*Math.PI*2,s:0.004+Math.random()*0.01})); }
+  function tick(){ ctx.clearRect(0,0,cv.width,cv.height);
+    const gold=getComputedStyle(document.documentElement).getPropertyValue('--gold-bright').trim()||'#E8CB82';
+    stars.forEach(st=>{ st.p+=st.s;
+      ctx.globalAlpha=0.25+Math.abs(Math.sin(st.p))*0.55;
+      ctx.fillStyle=gold; ctx.beginPath(); ctx.arc(st.x,st.y,st.r,0,7); ctx.fill(); });
+    ctx.globalAlpha=1; requestAnimationFrame(tick); }
+  addEventListener('resize',size); size();
+  if(!matchMedia('(prefers-reduced-motion: reduce)').matches) tick();
+})();
 
-function quitRace() {
-  if (rafId) cancelAnimationFrame(rafId);
-  if (race) race.running = false;
-  race = null;
-  renderLevels();
-  show("levels");
-}
-$("quitRace").addEventListener("click", quitRace);
-
-/* ============================================================
-   9. RESULTS
-   ============================================================ */
-function endRace() {
-  race.running = false;
-  if (rafId) cancelAnimationFrame(rafId);
-  sfx.finish();
-
-  const me = race.players[0];
-  const score = me.score;
-  const prevHigh = state.highs[race.level] || 0;
-  const isHigh = score > prevHigh;
-  if (isHigh) state.highs[race.level] = score;
-
-  // Advance the challenge level after a strong run on it.
-  let advanced = false;
-  if (race.level === state.challengeLevel && score >= 20 && state.challengeLevel < LEVELS.length) {
-    state.challengeLevel++;
-    advanced = true;
-  }
-  save();
-
-  $("finalScore").textContent = score;
-  $("finalSub").textContent = race.doubled ? "points (doubled — challenge level)" : "points";
-
-  const badges = [];
-  if (isHigh && prevHigh > 0) badges.push(`<div class="badge">★ New best — beat ${prevHigh}</div>`);
-  else if (isHigh) badges.push(`<div class="badge">★ First score on this level</div>`);
-  if (advanced) badges.push(`<div class="badge">Challenge level → ${state.challengeLevel}</div>`);
-  $("finalBadges").innerHTML = badges.join(" ");
-
-  const ranked = [...race.players].sort((a, b) => b.score - a.score);
-  $("standings").innerHTML = ranked.map((p, i) => `
-    <div class="standing ${p.you ? "you" : ""}">
-      <div class="place">${i + 1}</div>
-      ${avatarSVG(p.avatar)}
-      <div class="standing-name">${escapeHTML(p.name)}</div>
-      <div class="standing-score">${p.score}</div>
-    </div>`).join("");
-
-  $("goReview").textContent = race.wrong.length ? `Review (${race.wrong.length})` : "Review";
-  show("results");
-}
-
-$("playAgain").addEventListener("click", () => { if (race) startRace(race.level); });
-$("goReview").addEventListener("click", () => { renderReview(); show("review"); });
-
-function renderReview() {
-  const list = $("reviewList");
-  if (!race || !race.wrong.length) {
-    list.innerHTML = `<p class="empty-note">Nothing missed — a clean race.<br>Every answer you submitted was correct.</p>`;
-    return;
-  }
-  list.innerHTML = race.wrong.map(w => `
-    <div class="review-item">
-      <span class="review-q">${escapeHTML(w.prompt.replace(/ =$/, ""))}</span>
-      <span class="review-given">${escapeHTML(w.given)}</span>
-      <span class="review-arrow">→</span>
-      <span class="review-ans">${fmt(w.answer)}</span>
-    </div>`).join("");
-}
-
-/* ============================================================
-   10. BOOT
-   ============================================================ */
-load();
-$("nameInput").value = state.name === "You" ? "" : state.name;
-renderAvatars();
-refreshToggles();
-window.addEventListener("resize", () => {
-  refreshToggles();
-  if (currentScreen === "race" && race) renderInputArea();
-});
+/* ---------- boot ---------- */
+applyChrome(); renderNav(); paint();
 </script>
+</body>
+</html>
